@@ -1,0 +1,12 @@
+{
+  "name": "kodi-jaxcore-plugin",
+  "version": "0.0.0",
+  "description": "",
+  "author": "Jaxcore",
+  "dependencies": {
+    "chalk": "^2.4.1"
+  },
+  "devDependencies": {},
+  "scripts": {},
+  "license": "MIT"
+}
