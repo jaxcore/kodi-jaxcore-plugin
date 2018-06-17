@@ -1,11 +1,15 @@
 var EventEmitter = require('events');
 var plugin = require('jaxcore-plugin');
-var log = plugin.createLogger('Kodi Adapter');
+// var log = plugin.createLogger('Kodi Adapter');
 var adapterStore = plugin.createStore('Kodi Adapter Store');
 var Spin = require('jaxcore-spin');
 
+var _instance = 0;
+
 function KodiAdapter() {
 	this.constructor();
+	this.log = plugin.createLogger('Kodi Adapter '+(_instance++));
+	
 	this.id = Math.random().toString().substring(2);
 	this.devices = {
 		kodi: null,
@@ -55,7 +59,7 @@ function KodiAdapter() {
 // 		}
 // 	}
 // 	if (hasChanges) {
-// 		log(id + ' update', changes);
+// 		this.log(id + ' update', changes);
 // 		this.emit('update', id, changes);
 // 		return changes;
 // 	}
@@ -69,6 +73,10 @@ function KodiAdapter() {
 KodiAdapter.prototype = new EventEmitter();
 KodiAdapter.prototype.constructor = EventEmitter;
 
+KodiAdapter.prototype.destroy = function() {
+
+};
+
 KodiAdapter.prototype.setStore = function(store) {
 	this.store = store;
 };
@@ -81,7 +89,7 @@ KodiAdapter.prototype.getState = function() {
 };
 
 KodiAdapter.prototype.addDevice = function(kodi) {
-	log('adding Kodi', kodi.id);
+	this.log('adding Kodi', kodi.id);
 	
 	this.devices.kodi = kodi;
 	this.setState({
@@ -96,12 +104,15 @@ KodiAdapter.prototype.addDevice = function(kodi) {
 	kodi.on('disconnect', this._onDisconnectKodi);
 	
 	if (kodi.isConnected()) {
-		log('Kodi already connected');
+		this.log('Kodi already connected');
 		this._onConnectKodi(kodi);
 	}
 };
 KodiAdapter.prototype.removeDevice = function(kodi) {
+	this.log('removing kodi');
+	
 	this.dectivateAdapter();
+	
 	this.devices.kodi = null;
 	kodi.removeListener('connect', this._onConnectKodi);
 	kodi.removeListener('disconnect', this._onDisconnectKodi);
@@ -112,7 +123,7 @@ KodiAdapter.prototype.removeDevice = function(kodi) {
 	});
 };
 KodiAdapter.prototype.onDisconnectKodi = function(kodi) {
-	log('disconnected Kodi', kodi.id);
+	this.log('disconnected Kodi', kodi.id);
 	this.setState({
 		deviceConnected: false
 	});
@@ -120,7 +131,7 @@ KodiAdapter.prototype.onDisconnectKodi = function(kodi) {
 	this.dectivateAdapter();
 };
 KodiAdapter.prototype.onConnectKodi = function(kodi) {
-	log('Kodi connected',kodi.id);
+	this.log('Kodi connected',kodi.id);
 	this.setState({
 		deviceConnected: true
 	});
@@ -128,7 +139,7 @@ KodiAdapter.prototype.onConnectKodi = function(kodi) {
 }
 
 KodiAdapter.prototype.addSpin = function(spin) {
-	log('adapting spin '+spin.id);
+	this.log('adapting spin '+spin.id);
 	
 	this.devices.spin = spin;
 	
@@ -146,7 +157,7 @@ KodiAdapter.prototype.addSpin = function(spin) {
 	spin.on('disconnect', this._onSpinDisconnected);
 	
 	if (spin.isConnected()) {
-		log('Spin',spin.id,'already connected');
+		this.log('Spin',spin.id,'already connected');
 		this._onSpinConnected(spin);
 	}
 	
@@ -166,7 +177,7 @@ KodiAdapter.prototype.removeSpin = function(spin) {
 };
 
 KodiAdapter.prototype.onSpinDisconnected = function(spin) {
-	log('disconnected spin '+spin.id);
+	this.log('disconnected spin '+spin.id);
 	this.spinBuffer.destroy();
 	
 	this.dectivateAdapter();
@@ -176,7 +187,7 @@ KodiAdapter.prototype.onSpinDisconnected = function(spin) {
 	});
 };
 KodiAdapter.prototype.onSpinConnected = function(spin) {
-	log('connected spin '+spin.id);
+	this.log('connected spin '+spin.id);
 	this.spinBuffer = new Spin.Buffer(spin);
 	this.buffer = this.spinBuffer.spin;
 	
@@ -191,7 +202,7 @@ KodiAdapter.prototype.activateAdapter = function() {
 	var kodi = this.devices.kodi;
 	
 	if (spin && kodi && spin.isConnected() && kodi.isConnected()) {
-		log('activing adapter');
+		this.log('activing adapter');
 		
 		this._onSpin = this.onSpin.bind(this);
 		spin.on('spin', this._onSpin);
@@ -199,14 +210,26 @@ KodiAdapter.prototype.activateAdapter = function() {
 		this._onKnob = this.onKnob.bind(this);
 		spin.on('knob', this._onKnob);
 		
+		this._onKnobPress = this.onKnobPress.bind(this);
+		spin.on('knob-press', this._onKnobPress);
+		
 		this._onButton = this.onButton.bind(this);
 		spin.on('button', this._onButton);
+		
+		this._onButtonPress = this.onButtonPress.bind(this);
+		spin.on('button-press', this._onButtonPress);
+		
+		
+		
 		
 		this._onKodiUpdate = this.onKodiUpdate.bind(this);
 		kodi.on('update', this._onKodiUpdate);
 		
 		this._onKodiVolume = this.onKodiVolume.bind(this);
 		kodi.on('volume', this._onKodiVolume);
+		
+		this._onKodiNavigate= this.onKodiNavigate.bind(this);
+		kodi.on('navigate', this._onKodiNavigate);
 		
 		this.setState({
 			adapterActive: true
@@ -220,28 +243,39 @@ KodiAdapter.prototype.activateAdapter = function() {
 		var reason = {};
 		if (!spin || !spin.isConnected()) reason.spin = true;
 		if (!kodi || !kodi.isConnected()) reason.kodi = true;
-		log('cannot activate adapter', reason, typeof spin, typeof kodi);
-		if (spin) log('cannot activate adapter: spin', spin.state);
-		else log('no SPIN??');
-		if (kodi) log('cannot activate adapter: kodi', kodi.getState());
-		else log('no KODI??');
+		this.log('cannot activate adapter', reason, typeof spin, typeof kodi);
+		if (spin) this.log('cannot activate adapter: spin', spin.state);
+		else this.log('no SPIN??');
+		if (kodi) this.log('cannot activate adapter: kodi', kodi.getState());
+		else this.log('no KODI??');
 		return false;
 	}
 };
 
 KodiAdapter.prototype.onKodiUpdate = function(changes) {
-	log('kodi change', changes);
+	this.log('kodi change', changes);
 };
-KodiAdapter.prototype.onKodiVolume = function(volume, volumePercent) {
-	log('kodi volume', volumePercent);
-	this.devices.spin.scale(volumePercent);
+
+KodiAdapter.prototype.onKodiVolume = function(volumePercent, volume) {
+	this.log('kodi volume', volumePercent);
+	this.devices.spin.scale(volumePercent, 0);
 	// this.spinAction('scale', volumePercent);
 };
 
+KodiAdapter.prototype.onKodiNavigate = function(direction) {
+	this.log('on navigate', direction);
+	
+	switch (direction) {
+		case 'up': this.devices.spin.rotate(-1, 0); break;
+		case 'down': this.devices.spin.rotate(1, 0); break;
+		case 'left': this.devices.spin.rotate(-1, 1); break;
+		case 'right': this.devices.spin.rotate(1, 1); break;
+	}
+};
 
 KodiAdapter.prototype.onSpin = function(direction, position) {
 	if (this.devices.kodi.state.playing) {
-		log('spin while playing', direction, position);
+		//this.log('spin while playing', direction, position);
 		if (direction === 1) {
 			this.devices.kodi.volumeUp();
 		}
@@ -250,7 +284,7 @@ KodiAdapter.prototype.onSpin = function(direction, position) {
 		}
 	}
 	else {
-		log('spin while navigating', direction, position);
+		//this.log('spin while navigating', direction, position);
 		if (direction === 1) {
 			if (this.spinBuffer.spin(direction, 4, 5)) {
 				this.devices.kodi.navigateDown();
@@ -264,17 +298,37 @@ KodiAdapter.prototype.onSpin = function(direction, position) {
 	}
 };
 
+KodiAdapter.prototype.onKnobPress = function() {
+	this.log('knob pressed');
+	if (this.devices.kodi.state.playing) {
+		this.devices.kodi.togglePaused();
+	}
+	else {
+		this.devices.kodi.navigateSelect();
+	}
+};
+
 KodiAdapter.prototype.onKnob = function(pushed) {
-	log('knob '+(pushed?'pushed' : 'released'));
+	// this.log('knob '+(pushed?'pushed' : 'released'));
+};
+
+KodiAdapter.prototype.onButtonPress = function() {
+	this.log('button pressed');
+	if (this.devices.kodi.state.playing) {
+		this.devices.kodi.stop();
+	}
+	else {
+		this.devices.kodi.navigateBack();
+	}
 };
 
 KodiAdapter.prototype.onButton = function(pushed) {
-	log('button '+(pushed?'pushed' : 'released'));
+	// this.log('button '+(pushed?'pushed' : 'released'));
 };
 
 KodiAdapter.prototype.dectivateAdapter = function() {
 	if (this.getState().adapterActive) {
-		log('deactivating adapter');
+		this.log('deactivating adapter');
 		
 		this.removeSpinEvents(this.devices.spin);
 		this.removeDeviceEvents(this.devices.kodi);
@@ -285,15 +339,20 @@ KodiAdapter.prototype.dectivateAdapter = function() {
 		
 		this.emit('deactivated', this);
 	}
-	else log('adapter not active');
+	else this.log('adapter not active');
+	
 };
 KodiAdapter.prototype.removeSpinEvents = function(spin) {
 	spin.removeListener('spin', this._onSpin);
 	spin.removeListener('knob', this._onKnob);
+	spin.removeListener('knob-press', this._onKnobPress);
 	spin.removeListener('button', this._onButton);
+	spin.removeListener('button-press', this._onButtonPress);
+	
 };
 KodiAdapter.prototype.removeDeviceEvents = function(kodi) {
 	kodi.removeListener('update', this._onKodiUpdate);
 	kodi.removeListener('volume', this._onKodiVolume);
+	kodi.removeListener('navigate', this._onKodiNavigate);
 };
 module.exports = KodiAdapter;

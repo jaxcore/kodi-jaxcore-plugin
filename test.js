@@ -9,29 +9,22 @@ var kodi = new Kodi({
 	port: 9090
 });
 
-var kodiAdapter = new KodiAdapter();
-kodiAdapter.addDevice(kodi);
-// todo: kodiAdapter.removeDevice(kodi);
 
-kodi.connect();
+
+// Spin.connectOne(function(spin) {
+// 	kodiAdapter.addSpin(spin);
+// });
 
 Spin.connectAll(function(spin) {
 	
+	var kodiAdapter = new KodiAdapter();
+	kodiAdapter.addDevice(kodi);
 	kodiAdapter.addSpin(spin);
-	// todo: kodiAdapter.removeSpin(kodi);
+	
 	
 });
 
-/*
-Spin.connectAll(function(spin) {
-	kodiAdapter.connectSpin(spin);
-	
-	spin.on('disconnect', function() {
-		kodiAdapter.disconnectSpin(spin);
-	});
-});
- */
-
+// 	// todo: kodiAdapter.removeSpin(kodi);
 
 if (process.env.NODE_ENV=='prod') {
 	console.log('prod');
@@ -44,3 +37,6 @@ if (process.env.NODE_ENV=='prod') {
 	});
 	
 }
+
+
+kodi.connect();
