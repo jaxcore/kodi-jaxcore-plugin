@@ -1,9 +1,8 @@
-var log = require('jaxcore-spin').createLogger('Kodi');
 var EventEmitter = require('events');
 var net = require("net");
-var Store = require('./store');
-var kodiStore = new Store('Kodi Store');
-
+var plugin = require('jaxcore-plugin');
+var log = plugin.createLogger('Kodi');
+var kodiStore = plugin.createStore('Kodi Store');
 
 // CLIENT -----------------------
 
@@ -74,7 +73,7 @@ Kodi.prototype.setState = function(data) {
 	return changes;
 };
 Kodi.prototype.getState = function() {
-	return this.store[this.id];
+	return (this.id in this.store)? this.store[this.id] : {};
 };
 Kodi.prototype.changedState = function (name, value) {
 	if (!(name in this.state) && this.state[name] !== value) {
@@ -525,31 +524,23 @@ Kodi.prototype._processMuted = function (muted) {
 };
 
 Kodi.prototype.setVolume = function (volume) {
+	if (volume > 100) volume = 100;
+	if (volume < 0) volume = 0;
 	if (this.state.volume === volume) {
 		log('setVolume already = '+volume);
 		return;
 	}
-	
-	log('setVolume', volume);
-	
-	if (volume > 100) volume = 100;
-	if (volume < 0) volume = 0;
-	
 	if (this._sentVolume === volume) {
-		log('_sentVolume =', volume);
+		log('_sentVolume already =', volume);
 		return;
 	}
 	
 	log('setVolume', volume);
-	//actions.volume(this.id, volume);
 	
 	this.lastVolumeTime = new Date().getTime();
 	this._sentVolume = volume;
 	
 	var volumePercent = Math.abs(volume / 100);
-	
-	//this._sentVolume = volume;
-	// actions.volume(this.id, volume);
 	
 	this.setState({
 		volume: volume,
@@ -557,12 +548,11 @@ Kodi.prototype.setVolume = function (volume) {
 	});
 	
 	let v = {"method": "Application.SetVolume", "params": {"volume": volume}};
-	//log('write', v);
 	this.writeJson(v);
 	
 	// if (this._lastEmittedVolume !== volume) {
-		this._lastEmittedVolume = volume;
-		this.emit('volume', volume, volumePercent);
+	// 	this._lastEmittedVolume = volume;
+	// 	this.emit('volume', volume, volumePercent);
 	// }
 };
 
@@ -947,20 +937,6 @@ Kodi.prototype.processData = function (data, raw) {
 			log('receive volume', volume, 'muted', volume);
 			this._processVolume(volume);
 			this._processMuted(muted);
-			
-			// if (now() - this.lastVolumeTime > 1000) {
-			// 	console.log('> 1s');
-			// 	// actions.volume(this.id, volume, muted);
-			// }
-			// else {
-			// 	if (state.muted != muted) {
-			// 		console.log('< 1s');
-			// 		// actions.muted(this.id, muted);
-			// 		this.setState({
-			// 			muted: muted
-			// 		});
-			// 	}
-			// }
 		}
 		else if (data.method === 'Player.OnPause') {
 			log('OnPause', data.params.data);

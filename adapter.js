@@ -1,7 +1,7 @@
 var EventEmitter = require('events');
-var log = require('jaxcore-spin').createLogger('Kodi Adapter');
-var Store = require('./store');
-var adapterStore = new Store();
+var plugin = require('jaxcore-plugin');
+var log = plugin.createLogger('Kodi Adapter');
+var adapterStore = plugin.createStore('Kodi Adapter Store');
 var Spin = require('jaxcore-spin');
 
 function KodiAdapter() {
