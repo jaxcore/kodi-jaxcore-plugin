@@ -213,11 +213,17 @@ KodiAdapter.prototype.activateAdapter = function() {
 		this._onKnobPress = this.onKnobPress.bind(this);
 		spin.on('knob-press', this._onKnobPress);
 		
+		this._onKnobHold = this.onKnobHold.bind(this);
+		spin.on('knob-hold', this._onKnobHold);
+		
 		this._onButton = this.onButton.bind(this);
 		spin.on('button', this._onButton);
 		
 		this._onButtonPress = this.onButtonPress.bind(this);
 		spin.on('button-press', this._onButtonPress);
+		
+		this._onButtonHold = this.onButtonHold.bind(this);
+		spin.on('button-hold', this._onButtonHold);
 		
 		
 		
@@ -277,29 +283,90 @@ KodiAdapter.prototype.onSpin = function(direction, position) {
 	if (this.devices.kodi.state.playing) {
 		//this.log('spin while playing', direction, position);
 		if (direction === 1) {
-			this.devices.kodi.volumeUp();
+			if (this.devices.spin.state.knobPushed) {
+				this.setState({
+					isSeeking: true
+				});
+				this.devices.kodi.seekSmallForward();
+			}
+			else if (this.devices.spin.state.buttonPushed) {
+				this.setState({
+					isSeeking: true
+				});
+				this.devices.kodi.seekBigForward();
+			}
+			else {
+				this.devices.kodi.volumeUp();
+			}
 		}
 		else {
-			this.devices.kodi.volumeDown();
+			if (this.devices.spin.state.knobPushed) {
+				this.setState({
+					isSeeking: true
+				});
+				this.devices.kodi.seekSmallBackward();
+			}
+			else if (this.devices.spin.state.buttonPushed) {
+				this.setState({
+					isSeeking: true
+				});
+				this.devices.kodi.seekBigBackward();
+			}
+			else {
+				this.devices.kodi.volumeDown();
+			}
 		}
 	}
 	else {
 		//this.log('spin while navigating', direction, position);
 		if (direction === 1) {
-			if (this.spinBuffer.spin(direction, 4, 5)) {
-				this.devices.kodi.navigateDown();
+			if (this.devices.spin.state.knobPushed) {
+				if (this.spinBuffer.spin(direction, 2, 1)) {
+					this.devices.kodi.navigatePageDown();
+				}
+			}
+			else if (this.devices.spin.state.buttonPushed) {
+				if (this.spinBuffer.spin(direction, 3, 3)) {
+					this.devices.kodi.navigateRight();
+				}
+			}
+			else {
+				if (this.spinBuffer.spin(direction, 4, 5)) {
+					this.devices.kodi.navigateDown();
+				}
 			}
 		}
 		else {
-			if (this.spinBuffer.spin(direction, 4, 5)) {
-				this.devices.kodi.navigateUp();
+			if (this.devices.spin.state.knobPushed) {
+				if (this.spinBuffer.spin(direction, 2, 1)) {
+					this.devices.kodi.navigateUp();
+				}
+			}
+			else if (this.devices.spin.state.buttonPushed) {
+				if (this.spinBuffer.spin(direction, 3, 3)) {
+					this.devices.kodi.navigateLeft();
+				}
+			}
+			else {
+				if (this.spinBuffer.spin(direction, 4, 5)) {
+					this.devices.kodi.navigateUp();
+				}
 			}
 		}
 	}
 };
 
+KodiAdapter.prototype.onKnobHold = function() {
+	this.log('reactivate navigation mode?'); // todo
+};
+
 KodiAdapter.prototype.onKnobPress = function() {
 	this.log('knob pressed');
+	if (this.state.isSeeking) {
+		this.log('was seeking, ignore');
+		return;
+	}
+	
 	if (this.devices.kodi.state.playing) {
 		this.devices.kodi.togglePaused();
 	}
@@ -310,10 +377,25 @@ KodiAdapter.prototype.onKnobPress = function() {
 
 KodiAdapter.prototype.onKnob = function(pushed) {
 	// this.log('knob '+(pushed?'pushed' : 'released'));
+	if (!pushed) {
+		if (!pushed) {
+			this.stopSeeking();
+		}
+	}
 };
 
+KodiAdapter.prototype.onButtonHold = function() {
+	
+	if (this.devices.kodi.state.playing) {
+		this.devices.kodi.navigateNext();
+	}
+};
 KodiAdapter.prototype.onButtonPress = function() {
 	this.log('button pressed');
+	if (this.state.isSeeking) {
+		this.log('was seeking, ignore');
+		return;
+	}
 	if (this.devices.kodi.state.playing) {
 		this.devices.kodi.stop();
 	}
@@ -321,11 +403,22 @@ KodiAdapter.prototype.onButtonPress = function() {
 		this.devices.kodi.navigateBack();
 	}
 };
-
 KodiAdapter.prototype.onButton = function(pushed) {
 	// this.log('button '+(pushed?'pushed' : 'released'));
+	if (!pushed) {
+		this.stopSeeking();
+	}
 };
 
+KodiAdapter.prototype.stopSeeking = function() {
+	if (this.state.isSeeking) {
+		this.spinBuffer.delay(1000);
+		this.spinBuffer.reset(true);
+		this.setState({
+			isSeeking: false
+		});
+	}
+};
 KodiAdapter.prototype.dectivateAdapter = function() {
 	if (this.getState().adapterActive) {
 		this.log('deactivating adapter');
