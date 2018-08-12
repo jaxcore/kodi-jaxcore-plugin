@@ -5,7 +5,7 @@ var Kodi = require('./client');
 Spin.debug(true);
 
 var kodi = new Kodi({
-	host: 'localhost',
+	host: process.env.KODI_HOST || 'localhost',
 	port: 9090
 });
 

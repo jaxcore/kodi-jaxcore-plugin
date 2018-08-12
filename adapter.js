@@ -284,19 +284,25 @@ KodiAdapter.prototype.onSpin = function(direction, position) {
 		//this.log('spin while playing', direction, position);
 		if (direction === 1) {
 			if (this.devices.spin.state.knobPushed) {
-				this.setState({
-					isSeeking: true
-				});
-				this.devices.kodi.seekSmallForward();
+				if (this.spinBuffer.spin(direction, 2, 2)) {
+					this.setState({
+						isSeeking: true
+					});
+					this.devices.kodi.seekSmallForward();
+				}
 			}
 			else if (this.devices.spin.state.buttonPushed) {
-				this.setState({
-					isSeeking: true
-				});
-				this.devices.kodi.seekBigForward();
+				if (this.spinBuffer.spin(direction, 2, 2)) {
+					this.setState({
+						isSeeking: true
+					});
+					this.devices.kodi.seekBigForward();
+				}
 			}
 			else {
-				this.devices.kodi.volumeUp();
+				if (this.spinBuffer.spin(direction, 1, 3)) {
+					this.devices.kodi.volumeUp();
+				}
 			}
 		}
 		else {
@@ -313,7 +319,9 @@ KodiAdapter.prototype.onSpin = function(direction, position) {
 				this.devices.kodi.seekBigBackward();
 			}
 			else {
-				this.devices.kodi.volumeDown();
+				if (this.spinBuffer.spin(direction, 1, 3)) {
+					this.devices.kodi.volumeDown();
+				}
 			}
 		}
 	}
@@ -321,12 +329,12 @@ KodiAdapter.prototype.onSpin = function(direction, position) {
 		//this.log('spin while navigating', direction, position);
 		if (direction === 1) {
 			if (this.devices.spin.state.knobPushed) {
-				if (this.spinBuffer.spin(direction, 2, 1)) {
+				if (this.spinBuffer.spin(direction, 2, 2)) {
 					this.devices.kodi.navigatePageDown();
 				}
 			}
 			else if (this.devices.spin.state.buttonPushed) {
-				if (this.spinBuffer.spin(direction, 3, 3)) {
+				if (this.spinBuffer.spin(direction, 3, 5)) {
 					this.devices.kodi.navigateRight();
 				}
 			}
@@ -338,12 +346,12 @@ KodiAdapter.prototype.onSpin = function(direction, position) {
 		}
 		else {
 			if (this.devices.spin.state.knobPushed) {
-				if (this.spinBuffer.spin(direction, 2, 1)) {
-					this.devices.kodi.navigateUp();
+				if (this.spinBuffer.spin(direction, 2, 2)) {
+					this.devices.kodi.navigatePageUp();
 				}
 			}
 			else if (this.devices.spin.state.buttonPushed) {
-				if (this.spinBuffer.spin(direction, 3, 3)) {
+				if (this.spinBuffer.spin(direction, 3, 5)) {
 					this.devices.kodi.navigateLeft();
 				}
 			}
