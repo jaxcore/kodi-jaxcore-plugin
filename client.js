@@ -200,6 +200,7 @@ Kodi.prototype.connect = function() {
 	});
 	
 	this.client = new net.Socket();
+	this.client.setNoDelay(true);
 	this.client.on('error', this._onError);
 	this.client.on('data', this._onData);
 	this.client.on('close', this._onClose);

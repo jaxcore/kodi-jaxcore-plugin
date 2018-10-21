@@ -40,3 +40,20 @@ if (process.env.NODE_ENV=='prod') {
 
 
 kodi.connect();
+
+
+/*
+/Users/dstein/dev/jaxcore/jaxcore-spin/lib/spin.js:185
+	return this.state.connected;
+	                  ^
+
+TypeError: Cannot read property 'connected' of undefined
+    at Spin.isConnected (/Users/dstein/dev/jaxcore/jaxcore-spin/lib/spin.js:185:20)
+    at KodiAdapter.activateAdapter (/Users/dstein/dev/jaxcore/kodi-plugin/adapter.js:204:27)
+    at KodiAdapter.onConnectKodi (/Users/dstein/dev/jaxcore/kodi-plugin/adapter.js:138:7)
+    at Kodi.emit (events.js:180:13)
+    at Kodi.onConnect (/Users/dstein/dev/jaxcore/kodi-plugin/client.js:222:7)
+    at Socket.emit (events.js:185:15)
+    at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1160:10)
+
+ */

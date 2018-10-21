@@ -1,10 +1,11 @@
 {
-  "name": "kodi-jaxcore-plugin",
+  "name": "jaxcore-kodi-plugin",
   "version": "0.0.0",
   "description": "",
   "author": "Jaxcore",
   "dependencies": {
-    "chalk": "^2.4.1"
+    "chalk": "^2.4.1",
+    "jaxcore-spin": "0.0.1"
   },
   "devDependencies": {},
   "scripts": {},
