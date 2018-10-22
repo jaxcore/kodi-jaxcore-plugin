@@ -12,7 +12,9 @@ function KodiClient(config) {
 	var host = config.host;
 	var port = (config.port || 9090);
 	config.id = KodiClient.id(config);
-	this.constructor(kodiStore, kodiInterface, config);
+	this.constructor();
+	this.setStore(kodiStore);
+	this.bindInterface(kodiInterface, config);
 	
 	this.log = plugin.createLogger('Kodi Client '+(_instance++));
 	this.log('create', config);
