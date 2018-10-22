@@ -1,4 +1,4 @@
-//var Spin = require('jaxcore-spin');
+var Spin = require('jaxcore-spin');
 var KodiAdapter = require('./adapter');
 //var Kodi = require('./client');
 
@@ -6,48 +6,35 @@ var KodiService = require('./service');
 
 // Spin.debug(true);
 
-KodiService.add({
+// var kodi = new Kodi({
+// 	host: process.env.KODI_HOST || 'localhost',
+// 	port: 9090
+// });
+
+{
 	host: process.env.KODI_HOST || 'localhost',
-	port: 9090
-});
+		port: 9090
+}
 
-KodiService.connectAll(function (kodi) {
-	// var kodiAdapter = new KodiAdapter();
-	// kodiAdapter.addDevice(kodi);
-	// kodiAdapter.addSpin(spin);
+// Spin.connectOne(function(spin) {
+// 	kodiAdapter.addSpin(spin);
+// });
+
+Spin.connectAll(function(spin) {
 	
-	console.log('connected Kodi', kodi.state);
+	var kodiAdapter = new KodiAdapter();
+	kodiAdapter.addDevice(kodi);
+	kodiAdapter.addSpin(spin);
 	
-	// kodi.volumeUp();
-	//
-	// setTimeout(function() {
-	// 	kodi.volumeUp()
-	//
-	// 	setTimeout(function() {
-	// 		kodi.volumeUp()
-	//
-	// 		setTimeout(function() {
-	// 			kodi.volumeUp()
-	//
-	// 			setTimeout(function() {
-	// 				kodi.volumeUp()
-	//
-	// 				setTimeout(function() {
-	// 					kodi.volumeUp()
-	// 				},1000)
-	// 			},1000)
-	// 		},1000)
-	// 	},1000)
-	// },1000)
-	// // kodi.volumeDown();
 	
 });
 
-if (process.env.NODE_ENV === 'prod') {
+// 	// todo: kodiAdapter.removeSpin(kodi);
+
+if (process.env.NODE_ENV=='prod') {
 	console.log('prod');
 	
-	console.log = function () {
-	};
+	console.log = function() {};
 	
 	process.on('uncaughtException', function (err) {
 		//console.error(err);
@@ -55,6 +42,8 @@ if (process.env.NODE_ENV === 'prod') {
 	});
 	
 }
+
+kodi.connect();
 
 
 /*

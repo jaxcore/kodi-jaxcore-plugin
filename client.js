@@ -1,96 +1,92 @@
 var EventEmitter = require('events');
 var net = require("net");
 var plugin = require('jaxcore-plugin');
-// var log = plugin.createLogger('Kodi');
+var Client = plugin.Client;
 var kodiStore = plugin.createStore('Kodi Store');
+var kodiInterface = require('./interface.js');
 
 // CLIENT -----------------------
 
 var _instance = 0;
-function Kodi(device) {
-	this.log = plugin.createLogger('Kodi '+(_instance++));
-	this.log('create', device);
+function KodiClient(config) {
+	var host = config.host;
+	var port = (config.port || 9090);
+	config.id = KodiClient.id(config);
+	this.constructor(kodiStore, kodiInterface, config);
 	
-	var host = device.host;
-	var port = device.port;
-	var id = device.id || Kodi.createId(host, port);
+	this.log = plugin.createLogger('Kodi Client '+(_instance++));
+	this.log('create', config);
 	
-	this.constructor();
-	this.host = host;
-	this.port = port;
-	
-	this.id = id;
-	//this.lastVolumeTime = 0;
+	this.id = this.state.id;
 	
 	this.mq = {};
-	
 	this.lastVolumeTime = 0;
-	
 	this.reconnect = 2000;
-	
-	this.setStore(kodiStore);
-	this.setState({
-		status: 'disconnected',
-		reconnecting: true,
-		reconnectCount: 0,
-		
-		id: id,
-		host: host,
-		port: port,
-		
-		volume: null,
-		volumePercent: 0,
-		muted: false,
-		
-		playerId: null,
-		playing: false,
-		paused: false,
-		mediaType: null,
-		mediaMode: null
-	});
+
+	//
+	// this.setStore(kodiStore);
+	// this.setState({
+	// 	status: 'disconnected',
+	// 	reconnecting: true,
+	// 	reconnectCount: 0,
+	//
+	// 	id: id,
+	// 	host: host,
+	// 	port: port,
+	//
+	// 	volume: null,
+	// 	volumePercent: 0,
+	// 	muted: false,
+	//
+	// 	playerId: null,
+	// 	playing: false,
+	// 	paused: false,
+	// 	mediaType: null,
+	// 	mediaMode: null
+	// });
 	
 	this._onError = this.onError.bind(this);
 	this._onData = this.onData.bind(this);
 	this._onClose = this.onClose.bind(this);
 	this._onConnect = this.onConnect.bind(this);
-	
-	
 }
 
-Kodi.prototype = new EventEmitter();
-Kodi.prototype.constructor = EventEmitter;
+KodiClient.prototype = new Client();
+KodiClient.prototype.constructor = Client;
 
-Kodi.store = kodiStore;
+KodiClient.store = kodiStore;
 
-Kodi.createId = function(host, port) {
-	return Buffer.from(host+port).toString('base64');
+KodiClient.id = function(config) {
+	// return Buffer.from(config.host+':'+config.port).toString('base64');
+	return config.host+':'+config.port;
 };
 
-Kodi.prototype.setStore = function(store) {
-	this.store = store;
-};
-Kodi.prototype.setState = function(data) {
-	var changes = this.store.set(this.id, data);
-	this.state = this.store[this.id];
-	return changes;
-};
-Kodi.prototype.getState = function() {
-	return (this.id in this.store)? this.store[this.id] : {};
-};
-Kodi.prototype.changedState = function (name, value) {
-	if (!(name in this.state) && this.state[name] !== value) {
-		var c = {};
-		c[name] = value;
-		this.setState(c);
-		return true;
-	}
-	else {
-		return false;
-	}
-};
+//
+// KodiClient.prototype.setStore = function(store) {
+// 	this.store = store;
+// };
+// KodiClient.prototype.setState = function(data) {
+// 	var changes = this.store.set(this.id, data);
+// 	this.state = this.store[this.id];
+// 	return changes;
+// };
+// KodiClient.prototype.getState = function() {
+// 	return (this.id in this.store)? this.store[this.id] : {};
+// };
+// KodiClient.prototype.changedState = function (name, value) {
+// 	if (!(name in this.state) && this.state[name] !== value) {
+// 		var c = {};
+// 		c[name] = value;
+// 		this.setState(c);
+// 		return true;
+// 	}
+// 	else {
+// 		return false;
+// 	}
+// };
 
 
-// Kodi.prototype.setState = function(data) {
+// KodiClient.prototype.setState = function(data) {
 // 	this.state.vol
 	
 	// var changes = {};
@@ -109,7 +105,7 @@ Kodi.prototype.changedState = function (name, value) {
 	// }
 // };
 
-Kodi.prototype.update = function() {
+KodiClient.prototype.update = function() {
 	var me = this;
 	
 	// this.once('_setItems', function() {
@@ -137,13 +133,13 @@ Kodi.prototype.update = function() {
 	this.getActivePlayers();
 };
 
-Kodi.prototype.disconnect = function(options) {
+KodiClient.prototype.disconnect = function(options) {
 	this.log('disconnecting...');
 	if (this.client) {
 		this.client.destroy();
 	}
 };
-Kodi.prototype.onClose = function() {
+KodiClient.prototype.onClose = function() {
 	if (this.client) {
 		this.log('closing');
 		this.client.removeAllListeners('connect');
@@ -181,20 +177,20 @@ Kodi.prototype.onClose = function() {
 		},this.reconnect);
 	}
 };
-Kodi.prototype.setReconnect = function(ms) {
+KodiClient.prototype.setReconnect = function(ms) {
 	this.reconnect = ms;
 };
-Kodi.prototype.stopReconnecting = function() {
+KodiClient.prototype.stopReconnecting = function() {
 	this.reconnect = 0;
 	this.reconnecting = false;
 };
-Kodi.prototype.onError = function(data) {
+KodiClient.prototype.onError = function(data) {
 	this.log('error', data.toString());
 	// destroy?
 };
 
-Kodi.prototype.connect = function() {
-	this.log('connecting', this.host+':'+this.port);
+KodiClient.prototype.connect = function() {
+	this.log('connecting', this.state.host+':'+this.state.port);
 	this.setState({
 		status: 'connecting'
 	});
@@ -205,10 +201,10 @@ Kodi.prototype.connect = function() {
 	this.client.on('data', this._onData);
 	this.client.on('close', this._onClose);
 	this.client.on('connect', this._onConnect);
-	this.client.connect(this.port, this.host);
+	this.client.connect(this.state.port, this.state.host);
 	
 };
-Kodi.prototype.onConnect = function() {
+KodiClient.prototype.onConnect = function() {
 	this.reconnecting = false;
 	this.reconnectCount = 0;
 	this.setState({
@@ -218,19 +214,30 @@ Kodi.prototype.onConnect = function() {
 	});
 	this.log('connected', this.host);
 	
+	this.isFirstUpdate = true;
+	
+	var me = this;
+	this.once('volume', function() {
+		if (me.isFirstUpdate) {
+			me.isFirstUpdate = false;
+			this.emit('connect', me);  // emit after first data update?
+			this.startMonitor();
+		}
+	});
 	this.update();
-	this.emit('connect', this);  // emit after first data update?
-	this.startMonitor();
+	
+	// this.emit('connect', this);  // emit after first data update?
+	// this.startMonitor();
 };
 
 
 // INPUT COMMANDS
 
 
-Kodi.prototype.getActivePlayers = function () {
+KodiClient.prototype.getActivePlayers = function () {
 	this.queueMessage({"jsonrpc":"2.0","method":"Player.GetActivePlayers"},'_setActivePlayers');
 };
-Kodi.prototype._setActivePlayers = function (result, raw) {
+KodiClient.prototype._setActivePlayers = function (result, raw) {
 	// this.log('_setActivePlayers', result, raw);
 	
 	if (result && result[0]) {
@@ -325,7 +332,7 @@ Kodi.prototype._setActivePlayers = function (result, raw) {
 	this.emit('_setActivePlayers');
 };
 
-Kodi.prototype.setViewModeNavigate = function () {
+KodiClient.prototype.setViewModeNavigate = function () {
 	this.state.playing = false;
 	this.state.paused = false;
 	this.state.viewMode = viewModes.NAVIGATE;
@@ -333,11 +340,11 @@ Kodi.prototype.setViewModeNavigate = function () {
 };
 
 
-Kodi.prototype.getPlayerId = function () {
+KodiClient.prototype.getPlayerId = function () {
 	return this.state.playerId;
 };
 
-Kodi.prototype.getProperties = function () {
+KodiClient.prototype.getProperties = function () {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		this.queueMessage({
@@ -351,7 +358,7 @@ Kodi.prototype.getProperties = function () {
 		//this.getActivePlayers();
 	}
 };
-Kodi.prototype._setProperties = function (result) {
+KodiClient.prototype._setProperties = function (result) {
 	if (result) {
 		//this.log('_setProperties', result);
 		let playing = true;
@@ -443,7 +450,7 @@ Kodi.prototype._setProperties = function (result) {
 	// this.emit('_setProperties');
 };
 
-Kodi.prototype.getItems = function () {
+KodiClient.prototype.getItems = function () {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		this.queueMessage({
@@ -457,16 +464,16 @@ Kodi.prototype.getItems = function () {
 		}, '_setItems');
 	}
 };
-Kodi.prototype._setItems = function (result) {
+KodiClient.prototype._setItems = function (result) {
 	this.log('_setItems', result);
 	this.emit('_setItems');
 };
 
-Kodi.prototype.getVolumeMuted = function () {
+KodiClient.prototype.getVolumeMuted = function () {
 	this.queueMessage({"jsonrpc":"2.0","method":"Application.GetProperties","params":{properties:["volume","muted"]}}, '_setVolumeMuted');
 	
 };
-Kodi.prototype._setVolumeMuted = function (result) {
+KodiClient.prototype._setVolumeMuted = function (result) {
 	this.log('_setVolumeMuted', result);
 	
 	if ('muted' in result) {
@@ -487,11 +494,15 @@ function now() {
 	return new Date().getTime();
 }
 function timeDiff(time) {
+	if (typeof time === 'undefined') {
+		asdf();
+		process.exit();
+	}
 	if (time.getTime) time = time.getTime();
 	return new Date().getTime() - time;
 }
 
-Kodi.prototype._processVolume = function (volume) {
+KodiClient.prototype._processVolume = function (volume) {
 	this.log('_processVolume', volume);
 	let v = this.state.volume;
 	if (v == null) {
@@ -514,6 +525,14 @@ Kodi.prototype._processVolume = function (volume) {
 		volumePercent: volumePercent
 	});
 	
+	this.setState('audio', {
+		volume: volume,
+		volumePercent: volumePercent
+	});
+	
+	console.log(this.state);
+	process.exit();
+	
 	if (this._lastEmittedVolume !== volume) {
 		this._lastEmittedVolume = volume;
 		this.emit('volume', volumePercent, volume);
@@ -521,13 +540,13 @@ Kodi.prototype._processVolume = function (volume) {
 	
 };
 
-Kodi.prototype._processMuted = function (muted) {
+KodiClient.prototype._processMuted = function (muted) {
 	if (this.changedState('muted', muted)) {
 		this.emit('muted', muted);
 	}
 };
 
-Kodi.prototype.setVolume = function (volume) {
+KodiClient.prototype.setVolume = function (volume) {
 	if (volume > 100) volume = 100;
 	if (volume < 0) volume = 0;
 	if (this.state.volume === volume) {
@@ -561,22 +580,22 @@ Kodi.prototype.setVolume = function (volume) {
 };
 
 
-Kodi.prototype.volumeUp = function () {
+KodiClient.prototype.volumeUp = function () {
 	var v = this.state.volume + 1;
 	this.log('volume up', v);
 	this.setVolume(v);
 };
-Kodi.prototype.volumeDown = function () {
+KodiClient.prototype.volumeDown = function () {
 	var v = this.state.volume - 1;
 	this.log('volume down', v);
 	this.setVolume(v);
 };
 
-Kodi.prototype.isConnected = function() {
+KodiClient.prototype.isConnected = function() {
 	return (this.state.status === 'connected');
 };
 
-Kodi.prototype.writeJson = function (d) {
+KodiClient.prototype.writeJson = function (d) {
 	if (!this.isConnected()) {
 		this.log('write while connected',this.getState(), d);
 		//process.exit();
@@ -597,45 +616,45 @@ Kodi.prototype.writeJson = function (d) {
 	
 };
 
-Kodi.prototype.stop = function () {
+KodiClient.prototype.stop = function () {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		this.writeJson({"method": "Player.Stop", "params": {"playerid": playerid}});
 	}
 };
 
-Kodi.prototype.togglePaused = function () {
+KodiClient.prototype.togglePaused = function () {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		this.writeJson({"method": "Player.PlayPause", "params": { "playerid": playerid }});
 	}
 };
-Kodi.prototype.navigateNext = function () {
+KodiClient.prototype.navigateNext = function () {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		this.writeJson({"method": "Player.GoTo", "params": {"playerid": playerid, "to": "next"}});
 	}
 };
 
-Kodi.prototype.seekSmallForward = function () {
+KodiClient.prototype.seekSmallForward = function () {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "smallforward"}});
 	}
 };
-Kodi.prototype.seekSmallBackward = function () {
+KodiClient.prototype.seekSmallBackward = function () {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "smallbackward"}});
 	}
 };
-Kodi.prototype.seekBigForward = function () {
+KodiClient.prototype.seekBigForward = function () {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "bigforward"}});
 	}
 };
-Kodi.prototype.seekBigBackward = function () {
+KodiClient.prototype.seekBigBackward = function () {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "bigbackward"}});
@@ -658,7 +677,7 @@ function msToTime(ms) {
 	};
 	//return {"hours":0,"milliseconds":810,"minutes":36,"seconds":14}
 }
-Kodi.prototype.seek = function (ms) {
+KodiClient.prototype.seek = function (ms) {
 	let playerid = this.getPlayerId();
 	if (playerid !== null) {
 		let time = msToTime(ms);
@@ -667,46 +686,46 @@ Kodi.prototype.seek = function (ms) {
 	}
 };
 
-Kodi.prototype.navigateUp = function () {
+KodiClient.prototype.navigateUp = function () {
 	this.log('navigate', 'up');
 	this.emit('navigate', 'up');
 	this.writeJson({"method": "Input.Up"});
 };
-Kodi.prototype.navigateDown = function () {
+KodiClient.prototype.navigateDown = function () {
 	this.log('navigate', 'down');
 	this.emit('navigate', 'down');
 	this.writeJson({"method": "Input.Down"});
 };
-Kodi.prototype.navigateLeft = function () {
+KodiClient.prototype.navigateLeft = function () {
 	this.log('navigate', 'left');
 	this.emit('navigate', 'left');
 	this.writeJson({"method": "Input.Left"});
 };
-Kodi.prototype.navigateRight = function () {
+KodiClient.prototype.navigateRight = function () {
 	this.log('navigate', 'right');
 	this.emit('navigate', 'right');
 	this.writeJson({"method": "Input.Right"});
 };
 
-Kodi.prototype.navigatePageDown = function () {
+KodiClient.prototype.navigatePageDown = function () {
 	this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pagedown"}});
 };
 
-Kodi.prototype.navigatePageUp = function () {
+KodiClient.prototype.navigatePageUp = function () {
 	this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pageup"}});
 };
 
 
-Kodi.prototype.navigateSelect = function () {
+KodiClient.prototype.navigateSelect = function () {
 	this.emit('navigate', 'select');
 	this.writeJson({"method": "Input.Select"});
 };
-Kodi.prototype.navigateBack = function () {
+KodiClient.prototype.navigateBack = function () {
 	this.emit('navigate', 'back');
 	this.writeJson({"method": "Input.Back"});
 };
 
-Kodi.prototype.setMuted = function (muted) {
+KodiClient.prototype.setMuted = function (muted) {
 	this.writeJson({"method": "Application.SetMute", "params": {"mute": muted}});
 };
 
@@ -718,14 +737,14 @@ function mkid() {
 	return parseInt(Math.random().toString().substring(2));
 }
 
-Kodi.prototype.queueMessage = function (data, method) {
+KodiClient.prototype.queueMessage = function (data, method) {
 	var id = mkid();
 	data.id = id;
 	this.mq[id] = method;
 	this.writeJson(data);
 };
 
-Kodi.prototype.onData = function (raw) {
+KodiClient.prototype.onData = function (raw) {
 	/*
 	 {"id":7151250899769592,"jsonrpc":"2.0","result":{"muted":false,"volume":100}}
 	 {"id":3110470012705524,"jsonrpc":"2.0","result":[{"playerid":1,"type":"video"}]}
@@ -891,7 +910,7 @@ var viewModes = {
 };
 
 
-Kodi.prototype.startMonitor = function () {
+KodiClient.prototype.startMonitor = function () {
 	if (this.monitor) {
 		clearInterval(this.monitor);
 	}
@@ -902,14 +921,14 @@ Kodi.prototype.startMonitor = function () {
 		me.getProperties();
 	},1000);
 };
-Kodi.prototype.stopMonitor = function () {
+KodiClient.prototype.stopMonitor = function () {
 	if (this.monitor) {
 		clearInterval(this.monitor);
 	}
 	delete this.monitor;
 };
 
-Kodi.prototype.processData = function (data, raw) {
+KodiClient.prototype.processData = function (data, raw) {
 	if (!data) {
 		this.log('no data');
 		return;
@@ -1061,7 +1080,7 @@ Kodi.prototype.processData = function (data, raw) {
 	}
 };
 
-Kodi.prototype.changeSetting = function (settingId, newValue) {
+KodiClient.prototype.changeSetting = function (settingId, newValue) {
 	this.log('changeSetting', settingId, newValue);
 	var settingMethodMap = {
 		volume: 'setVolume',
@@ -1076,32 +1095,32 @@ Kodi.prototype.changeSetting = function (settingId, newValue) {
 	}
 };
 
-Kodi.prototype.createEventAction = function (actionType, options) {
+KodiClient.prototype.createEventAction = function (actionType, options) {
 	if (this[actionType]) {
 		this[actionType](options);
 	}
 	else this.log('no action', actionType);
 };
 
-Kodi.prototype.toggleMute = function () {
+KodiClient.prototype.toggleMute = function () {
 	let state = this.getState();
 	this.setMuted(!state.muted);
 };
 
-// Kodi.prototype.mute = function () {
+// KodiClient.prototype.mute = function () {
 // 	this.setMuted(true);
 // };
-// Kodi.prototype.unmute = function () {
+// KodiClient.prototype.unmute = function () {
 // 	let kodi = this.getState();
 // 	this.setMuted(false);
 // };
 
 
 
-Kodi.prototype.write = function (str) {
+KodiClient.prototype.write = function (str) {
 	// this.log('write', str);
 	var r = this.client.write(str);
 	// this.log('write r', r);
 };
 
-module.exports = Kodi;
+module.exports = KodiClient;
