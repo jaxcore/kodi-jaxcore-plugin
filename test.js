@@ -1,74 +1,59 @@
-//var Spin = require('jaxcore-spin');
-var KodiAdapter = require('./adapter');
 //var Kodi = require('./client');
+
+var Spin = require('jaxcore-spin');
 
 var KodiService = require('./service');
 
-// Spin.debug(true);
+var host = process.env.KODI_HOST || 'localhost';
+console.log('connecting to', host);
 
 KodiService.add({
-	host: process.env.KODI_HOST || 'localhost',
+	host: host,
 	port: 9090
 });
 
 KodiService.connectAll(function (kodi) {
-	// var kodiAdapter = new KodiAdapter();
-	// kodiAdapter.addDevice(kodi);
-	// kodiAdapter.addSpin(spin);
-	
 	console.log('connected Kodi', kodi.state);
 	
-	// kodi.volumeUp();
-	//
-	// setTimeout(function() {
-	// 	kodi.volumeUp()
-	//
-	// 	setTimeout(function() {
-	// 		kodi.volumeUp()
-	//
-	// 		setTimeout(function() {
-	// 			kodi.volumeUp()
-	//
-	// 			setTimeout(function() {
-	// 				kodi.volumeUp()
-	//
-	// 				setTimeout(function() {
-	// 					kodi.volumeUp()
-	// 				},1000)
-	// 			},1000)
-	// 		},1000)
-	// 	},1000)
-	// },1000)
-	// // kodi.volumeDown();
-	
-});
-
-if (process.env.NODE_ENV === 'prod') {
-	console.log('prod');
-	
-	console.log = function () {
-	};
-	
-	process.on('uncaughtException', function (err) {
-		//console.error(err);
-		// console.log("Node NOT Exiting...");
+	// Spin.connectTo('3C71BF0DC810', function(spin) {
+	Spin.connectAll(function(spin) {
+		// adapter.emit('spin-connected', spin);
+		console.log('spin connected', spin);
+		
+		
+		spin.on('spin', function (direction, position) {
+			console.log('spin', direction, position);
+			if (spin.state.knobPushed) {
+				if (kodi.state.playing) {
+				
+				}
+			}
+			else if (spin.buffer(direction, 1, 1)) {
+				if (direction === 1) kodi.audio.volumeUp();
+				else kodi.audio.volumeDown();
+			}
+		});
+		
+		spin.on('button', function (pushed) {
+			console.log('button', pushed);
+			if (!pushed) {
+				// kodi.source.nextInput();
+			}
+		});
+		
+		spin.on('button-hold', function () {
+			console.log('button-hold');
+			// kodi.system.togglePower();
+		});
+		
+		spin.on('knob', function (pushed) {
+			console.log('knob', pushed);
+			if (!pushed) {
+				kodi.audio.toggleMuted();
+				
+			}
+		});
+		
+		
 	});
-	
-}
-
-
-/*
-/Users/dstein/dev/jaxcore/jaxcore-spin/lib/spin.js:185
-	return this.state.connected;
-	                  ^
-
-TypeError: Cannot read property 'connected' of undefined
-    at Spin.isConnected (/Users/dstein/dev/jaxcore/jaxcore-spin/lib/spin.js:185:20)
-    at KodiAdapter.activateAdapter (/Users/dstein/dev/jaxcore/kodi-plugin/adapter.js:204:27)
-    at KodiAdapter.onConnectKodi (/Users/dstein/dev/jaxcore/kodi-plugin/adapter.js:138:7)
-    at Kodi.emit (events.js:180:13)
-    at Kodi.onConnect (/Users/dstein/dev/jaxcore/kodi-plugin/client.js:222:7)
-    at Socket.emit (events.js:185:15)
-    at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1160:10)
-
- */
+});

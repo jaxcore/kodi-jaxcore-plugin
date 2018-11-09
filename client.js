@@ -532,8 +532,8 @@ KodiClient.prototype._processVolume = function (volume) {
 		volumePercent: volumePercent
 	});
 	
-	console.log(this.state);
-	process.exit();
+	// console.log(this.state);
+	// process.exit();
 	
 	if (this._lastEmittedVolume !== volume) {
 		this._lastEmittedVolume = volume;

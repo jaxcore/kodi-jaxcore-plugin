@@ -2,7 +2,7 @@ var Spin = require('jaxcore-spin');
 var KodiAdapter = require('./adapter');
 //var Kodi = require('./client');
 
-var KodiService = require('./service');
+// var KodiService = require('./service');
 
 // Spin.debug(true);
 
@@ -11,11 +11,11 @@ var KodiService = require('./service');
 // 	port: 9090
 // });
 
-{
-	host: process.env.KODI_HOST || 'localhost',
-		port: 9090
-}
-
+// {
+// 	host: process.env.KODI_HOST || 'localhost',
+// 		port: 9090
+// }
+//
 // Spin.connectOne(function(spin) {
 // 	kodiAdapter.addSpin(spin);
 // });

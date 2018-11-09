@@ -18,61 +18,59 @@ module.exports = {
 		identity: {
 			type: 'string',
 			defaultValue: ''
+		},
+		muted: {
+			type: 'boolean',
+			defaultValue: false
+		},
+		volume: {
+			type: 'integer',
+			defaultValue: 0,
+			minimum: 'minVolume',
+			maximum: 'maxVolume'
+		},
+		volumePercent: {
+			type: 'float',
+			defaultValue: 0
+		},
+		minVolume: {
+			type: 'integer',
+			defaultValue: 0,
+			maximumValue: 100,
+			minimumValue: 0
+		},
+		maxVolume: {
+			type: 'integer',
+			defaultValue: 100,
+			maximumValue: 100,
+			minimumValue: 0
+		},
+		receivedVolume: {
+			type: 'integer',
+			defaultValue: 0
+		},
+		volumeIncrement: {
+			type: 'integer',
+			defaultValue: 1
 		}
 	},
-	interfaces: {
+	devices: {
 		audio: {
-			states: {
-				muted: {
-					type: 'boolean',
-					defaultValue: false
-				},
-				volume: {
-					type: 'integer',
-					defaultValue: 0,
-					minimum: 'minVolume',
-					maximum: 'maxVolume'
-				},
-				volumePercent: {
-					type: 'float',
-					defaultValue: 0
-				},
-				minVolume: {
-					type: 'integer',
-					defaultValue: 0,
-					maximumValue: 100,
-					minimumValue: 0
-				},
-				maxVolume: {
-					type: 'integer',
-					defaultValue: 100,
-					maximumValue: 100,
-					minimumValue: 0
-				},
-				receivedVolume: {
-					type: 'integer',
-					defaultValue: -90
-				},
-				volumeIncrement: {
-					type: 'integer',
-					defaultValue: 1
-				}
-			},
 			events: {
 				volume: ['int', 'float'],
 				mute: ['boolean']
 			},
 			actions: {
 				volumeUp: function () {
-					var v = this.state.audio.volume + this.state.audio.volumeIncrement;
+					var v = this.state.volume + this.state.volumeIncrement;
 					this.audio.volume(v);
 				},
 				volumeDown: function () {
-					var v = this.state.audio.volume - this.state.audio.volumeIncrement;
+					var v = this.state.volume - this.state.volumeIncrement;
 					this.audio.volume(v);
 				},
 				toggleMuted: function () {
-					var muted = !this.state.audio.muted;
+					var muted = !this.state.muted;
 					this.audio.muted(muted);
 				},
 				mute: function () {
@@ -84,7 +82,7 @@ module.exports = {
 			},
 			settings: {
 				volume: function (v) {
-					if (this.state.audio.sentVolume === v) {
+					if (this.state.sentVolume === v) {
 						log('volume already', v);
 					}
 					else {
@@ -104,22 +102,22 @@ module.exports = {
 						// 	return;
 						// }
 						
-						if (v > this.state.audio.maxVolume) {
+						if (v > this.state.maxVolume) {
 							log(v + ' exceeds maximum volume');
-							if (this.state.audio.volume !== this.state.audio.maxVolume) {
+							if (this.state.volume !== this.state.maxVolume) {
 								log('setting volume to maximum');
-								v = this.state.audio.maxVolume;
+								v = this.state.maxVolume;
 							}
 							else {
 								log('already at max');
 								return;
 							}
 						}
-						if (v < this.state.audio.minVolume) {
+						if (v < this.state.minVolume) {
 							log(v + ' below minimum volume');
-							if (this.state.audio.volume !== this.state.audio.minVolume) {
+							if (this.state.volume !== this.state.minVolume) {
 								log('setting volume to minimum');
-								v = this.state.audio.minVolume;
+								v = this.state.minVolume;
 							}
 							else {
 								log('already at min');
@@ -129,7 +127,7 @@ module.exports = {
 						
 						//this.lastWrittenVolume = int;
 						
-						var volumePercent = (v - this.state.audio.minVolume) / Math.abs(this.state.audio.maxVolume - this.state.audio.minVolume);
+						var volumePercent = (v - this.state.minVolume) / Math.abs(this.state.maxVolume - this.state.minVolume);
 						var now = new Date().getTime();
 						this.setState('audio', {
 							volume: v,
@@ -137,6 +135,8 @@ module.exports = {
 							sentVolumeTime: now,
 							sentVolume: v
 						});
+						
+						this.setVolume(v);
 						
 						this.emit('volume', volumePercent, v);
 						
