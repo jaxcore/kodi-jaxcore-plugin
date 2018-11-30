@@ -1,6 +1,23 @@
 var plugin = require('jaxcore-plugin');
 var log = plugin.createLogger('Kodi');
 
+function msToTime(ms) {
+	let hours = Math.floor(ms / 60 / 60 / 1000);
+	ms -= hours*60*60*1000;
+	let minutes = Math.floor(ms / 60 / 1000);
+	ms -= minutes*60*1000;
+	let seconds = Math.floor(ms / 1000);
+	ms -= seconds*1000;
+	let milliseconds = ms;
+	return {
+		hours,
+		minutes,
+		seconds,
+		milliseconds
+	};
+	//return {"hours":0,"milliseconds":810,"minutes":36,"seconds":14}
+}
+
 module.exports = {
 	states: {
 		id: {
@@ -52,7 +69,47 @@ module.exports = {
 		volumeIncrement: {
 			type: 'integer',
 			defaultValue: 1
-		}
+		},
+		playing: {
+			type: 'boolean',
+			defaultValue: false
+		},
+		playlistId: {
+			type: 'string'
+		},
+		paused: {
+			type: 'boolean',
+			defaultValue: false
+		},
+		speed: {
+			type: 'integer',
+			defaultValue: 1
+		},
+		position: {
+			type: 'integer',
+			defaultValue: 1
+		},
+		positionPercent: {
+			type: 'float',
+			defaultValue: 0
+		},
+		duration: {
+			type: 'integer',
+			defaultValue: 1
+		},
+		viewMode: {
+			type: 'string'
+		},
+		playerId: {
+			type: 'string'
+		},
+		mediaType: {
+			type: 'string'
+		},
+		mediaMode: {
+			type: 'string'
+		},
+		
 	},
 	devices: {
 		audio: {
@@ -63,10 +120,12 @@ module.exports = {
 			actions: {
 				volumeUp: function () {
 					var v = this.state.volume + this.state.volumeIncrement;
+					log('volumeUp', v, this.state.volume, this.state.volumeIncrement)
 					this.audio.volume(v);
 				},
 				volumeDown: function () {
 					var v = this.state.volume - this.state.volumeIncrement;
+					log('volumeDown', v, this.state.volume, this.state.volumeIncrement)
 					this.audio.volume(v);
 				},
 				toggleMuted: function () {
@@ -77,31 +136,35 @@ module.exports = {
 					this.audio.muted(true);
 				},
 				unmute: function () {
-					this.audio.muted(false);
+					this.audio.muted(false);;
 				}
 			},
 			settings: {
 				volume: function (v) {
+					console.log('auido.volume()', v);
+					
 					if (this.state.sentVolume === v) {
 						log('volume already', v);
 					}
 					else {
-						log('volume()', v, this.state.audio);
-						
+						console.log('v', v);
+
+						//log('volume()', v); //, this.state.audio);
+
 						//if (int == this.lastWrittenVolume) return;
 						v = parseInt(v) || 0;
 						if (isNaN(v)) {
 							log('isNaN', v);
 							return;
 						} //int = 0;
-						
+
 						//let anthem = getState()[this.id];
-						
+
 						// if (new Date().getTime() - this.lastVolumeTime < 20) {
 						// 	log('skip vol');
 						// 	return;
 						// }
-						
+
 						if (v > this.state.maxVolume) {
 							log(v + ' exceeds maximum volume');
 							if (this.state.volume !== this.state.maxVolume) {
@@ -124,39 +187,169 @@ module.exports = {
 								return;
 							}
 						}
-						
+
 						//this.lastWrittenVolume = int;
-						
+
 						var volumePercent = (v - this.state.minVolume) / Math.abs(this.state.maxVolume - this.state.minVolume);
 						var now = new Date().getTime();
-						this.setState('audio', {
+						this.setState({
 							volume: v,
 							volumePercent: volumePercent,
 							sentVolumeTime: now,
 							sentVolume: v
 						});
-						
-						this.setVolume(v);
-						
+
+						// if (volume > 100) volume = 100;
+						// if (volume < 0) volume = 0;
+
+						// this.log('setVolume', volume);
+
+						this.lastVolumeTime = new Date().getTime();
+						// this._sentVolume = v;
+
+						// var volumePercent = Math.abs(volume / 100);
+
+						// this.setState({
+						// 	volume: volume,
+						// 	volumePercent: volumePercent
+						// });
+
+						let d = {"method": "Application.SetVolume", "params": {"volume": v}};
+						console.log('d',d)
+						this.writeJson(d);
+
+						// if (this._lastEmittedVolume !== v) {
+						// 	this._lastEmittedVolume = v;
+						// 	this.emit('volume', volumePercent, v);
+						// }
+
 						this.emit('volume', volumePercent, v);
-						
+
 						// this.write('Z1VOL' + v + ';');
 					}
 				},
 				
 				minVolume: function (v) {
-					this.setState('audio', {
+					this.setState({
 						minVolume: v
 					});
 				},
 				maxVolume: function (v) {
-					this.setState('audio', {
+					this.setState({
 						maxVolume: v
 					});
 				},
 				muted: function (muted) {
+					this.writeJson({"method": "Application.SetMute", "params": {"mute": muted}});
+					
 					// if (muted) this.audioDevice.mute();
 					// else audioDevice.audio.umute();
+				}
+			}
+			
+		},
+		navigate: {
+			events: {
+				'navigate': ['direction']
+			},
+			actions: {
+				next: function () {
+					let playerid = this.getPlayerId();
+					if (playerid !== null) {
+						this.writeJson({"method": "Player.GoTo", "params": {"playerid": playerid, "to": "next"}});
+					}
+				},
+				
+				up: function () {
+					this.log('navigate', 'up');
+					this.emit('navigate', 'up');
+					this.writeJson({"method": "Input.Up"});
+				},
+				down: function () {
+					this.log('navigate', 'down');
+					this.emit('navigate', 'down');
+					this.writeJson({"method": "Input.Down"});
+				},
+				left: function () {
+					this.log('navigate', 'left');
+					this.emit('navigate', 'left');
+					this.writeJson({"method": "Input.Left"});
+				},
+				right: function () {
+					this.log('navigate', 'right');
+					this.emit('navigate', 'right');
+					this.writeJson({"method": "Input.Right"});
+				},
+				pageDown: function () {
+					this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pagedown"}});
+				},
+				pageUp: function () {
+					this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pageup"}});
+				},
+				select: function () {
+					this.emit('navigate', 'select');
+					this.writeJson({"method": "Input.Select"});
+				},
+				back: function () {
+					this.emit('navigate', 'back');
+					this.writeJson({"method": "Input.Back"});
+				}
+			},
+			settings: {
+			
+			}
+		},
+		player: {
+			events: {
+				paused: ['boolean'],
+				stop: [],
+			},
+			actions: {
+				playPause: function () {
+					let playerid = this.getPlayerId();
+					if (playerid !== null) {
+						this.writeJson({"method": "Player.PlayPause", "params": { "playerid": playerid }});
+					}
+				},
+				stop: function () {
+					let playerid = this.getPlayerId();
+					if (playerid !== null) {
+						this.writeJson({"method": "Player.Stop", "params": {"playerid": playerid}});
+					}
+				},
+				seekSmallForward: function () {
+					let playerid = this.getPlayerId();
+					if (playerid !== null) {
+						this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "smallforward"}});
+					}
+				},
+				seekSmallBackward: function () {
+					let playerid = this.getPlayerId();
+					if (playerid !== null) {
+						this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "smallbackward"}});
+					}
+				},
+				seekBigForward: function () {
+					let playerid = this.getPlayerId();
+					if (playerid !== null) {
+						this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "bigforward"}});
+					}
+				},
+				seekBigBackward: function () {
+					let playerid = this.getPlayerId();
+					if (playerid !== null) {
+						this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "bigbackward"}});
+					}
+				},
+			},
+			settings: {
+				seek: function (ms) {
+					let playerid = this.getPlayerId();
+					if (playerid !== null) {
+						let time = msToTime(ms);
+						this.log('seeking to', ms, time);
+						this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": {"time": time}}});
+					}
 				}
 			}
 		}

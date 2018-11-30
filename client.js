@@ -9,8 +9,8 @@ var kodiInterface = require('./interface.js');
 
 var _instance = 0;
 function KodiClient(config) {
-	var host = config.host;
-	var port = (config.port || 9090);
+	// var host = config.host;
+	// var port = (config.port || 9090);
 	config.id = KodiClient.id(config);
 	this.constructor();
 	this.setStore(kodiStore);
@@ -24,28 +24,6 @@ function KodiClient(config) {
 	this.mq = {};
 	this.lastVolumeTime = 0;
 	this.reconnect = 2000;
-
-	//
-	// this.setStore(kodiStore);
-	// this.setState({
-	// 	status: 'disconnected',
-	// 	reconnecting: true,
-	// 	reconnectCount: 0,
-	//
-	// 	id: id,
-	// 	host: host,
-	// 	port: port,
-	//
-	// 	volume: null,
-	// 	volumePercent: 0,
-	// 	muted: false,
-	//
-	// 	playerId: null,
-	// 	playing: false,
-	// 	paused: false,
-	// 	mediaType: null,
-	// 	mediaMode: null
-	// });
 	
 	this._onError = this.onError.bind(this);
 	this._onData = this.onData.bind(this);
@@ -56,80 +34,12 @@ function KodiClient(config) {
 KodiClient.prototype = new Client();
 KodiClient.prototype.constructor = Client;
 
-KodiClient.store = kodiStore;
-
 KodiClient.id = function(config) {
 	// return Buffer.from(config.host+':'+config.port).toString('base64');
 	return config.host+':'+config.port;
 };
 
-//
-// KodiClient.prototype.setStore = function(store) {
-// 	this.store = store;
-// };
-// KodiClient.prototype.setState = function(data) {
-// 	var changes = this.store.set(this.id, data);
-// 	this.state = this.store[this.id];
-// 	return changes;
-// };
-// KodiClient.prototype.getState = function() {
-// 	return (this.id in this.store)? this.store[this.id] : {};
-// };
-// KodiClient.prototype.changedState = function (name, value) {
-// 	if (!(name in this.state) && this.state[name] !== value) {
-// 		var c = {};
-// 		c[name] = value;
-// 		this.setState(c);
-// 		return true;
-// 	}
-// 	else {
-// 		return false;
-// 	}
-// };
-
-
-// KodiClient.prototype.setState = function(data) {
-// 	this.state.vol
-	
-	// var changes = {};
-	// var hasChanges = false;
-	// if (!store[this.id]) store[this.id] = {};
-	// var s = store[this.id];
-	// for (var i in data) {
-	// 	if (s[i] !== data[i]) {
-	// 		hasChanges = true;
-	// 		changes[i] = s[i] = data[i];
-	// 	}
-	// }
-	// if (hasChanges) {
-	// 	this.log(this.id + ' update', changes);
-	// 	this.emit('update', changes);
-	// }
-// };
-
 KodiClient.prototype.update = function() {
-	var me = this;
-	
-	// this.once('_setItems', function() {
-	// 	me.sendPlayState();
-	// 	if (callback) callback();
-	// });
-	
-	// this.once('_setVolumeMuted', function() {
-	// 	this.log('on _setVolumeMuted');
-	// });
-	
-	// this.once('_setProperties', function() {
-	// 	this.log('on _setProperties');
-	// 	me.getVolumeMuted();
-	// });
-	//
-	// this.once('_setActivePlayers', function() {
-	// 	this.log('on _setActivePlayers');
-	// 	me.getProperties();
-	// });
-	// this.getActivePlayers();
-	
 	this.getVolumeMuted();
 	this.getProperties();
 	this.getActivePlayers();
@@ -271,8 +181,8 @@ KodiClient.prototype._setActivePlayers = function (result, raw) {
 				mediaMode = 'livestream';
 			}
 			else {
-				this.log('MEDIA TYPE UNKNOWN?' + mediaType);
-				mediaType = 'unknown';
+				// this.log('MEDIA TYPE UNKNOWN?' + mediaType);
+				// mediaType = 'unknown';
 				mediaType = 'video';
 			}
 			
@@ -413,6 +323,11 @@ KodiClient.prototype._setProperties = function (result) {
 			// this.log('_setProperties nope 1');
 		}
 		
+		console.log('status', {
+			playing: playing,
+			paused: paused,
+			position: position
+		});
 		
 		var changes = this.setState({
 			playing: playing,
@@ -424,8 +339,8 @@ KodiClient.prototype._setProperties = function (result) {
 			duration: duration
 		});
 		if (changes && changes !== null) {
-			this.log('_setProperties has changes', changes);
-			this.log('_setProperties state', this.state);
+			// this.log('_setProperties has changes', changes);
+			// this.log('_setProperties state', this.state);
 			
 			if ('playing' in changes) {
 				this.log('playing has changed', changes.playing);
@@ -527,10 +442,10 @@ KodiClient.prototype._processVolume = function (volume) {
 		volumePercent: volumePercent
 	});
 	
-	this.setState('audio', {
-		volume: volume,
-		volumePercent: volumePercent
-	});
+	// this.setState('audio', {
+	// 	volume: volume,
+	// 	volumePercent: volumePercent
+	// });
 	
 	// console.log(this.state);
 	// process.exit();
@@ -543,55 +458,26 @@ KodiClient.prototype._processVolume = function (volume) {
 };
 
 KodiClient.prototype._processMuted = function (muted) {
-	if (this.changedState('muted', muted)) {
-		this.emit('muted', muted);
-	}
+	this.setState('muted', muted);
+	this.emit('muted', muted);
 };
 
-KodiClient.prototype.setVolume = function (volume) {
-	if (volume > 100) volume = 100;
-	if (volume < 0) volume = 0;
-	if (this.state.volume === volume) {
-		this.log('setVolume already = '+volume);
-		return;
-	}
-	if (this._sentVolume === volume) {
-		this.log('_sentVolume already =', volume);
-		return;
-	}
-	
-	this.log('setVolume', volume);
-	
-	this.lastVolumeTime = new Date().getTime();
-	this._sentVolume = volume;
-	
-	var volumePercent = Math.abs(volume / 100);
-	
-	this.setState({
-		volume: volume,
-		volumePercent: volumePercent
-	});
-	
-	let v = {"method": "Application.SetVolume", "params": {"volume": volume}};
-	this.writeJson(v);
-	
-	if (this._lastEmittedVolume !== volume) {
-		this._lastEmittedVolume = volume;
-		this.emit('volume', volumePercent, volume);
-	}
-};
+//
+// KodiClient.prototype.setVolume = function (volume) {
+//
+// };
 
-
-KodiClient.prototype.volumeUp = function () {
-	var v = this.state.volume + 1;
-	this.log('volume up', v);
-	this.setVolume(v);
-};
-KodiClient.prototype.volumeDown = function () {
-	var v = this.state.volume - 1;
-	this.log('volume down', v);
-	this.setVolume(v);
-};
+//
+// KodiClient.prototype.volumeUp = function () {
+// 	var v = this.state.volume + 1;
+// 	this.log('volume up', v);
+// 	this.setVolume(v);
+// };
+// KodiClient.prototype.volumeDown = function () {
+// 	var v = this.state.volume - 1;
+// 	this.log('volume down', v);
+// 	this.setVolume(v);
+// };
 
 KodiClient.prototype.isConnected = function() {
 	return (this.state.status === 'connected');
@@ -618,118 +504,14 @@ KodiClient.prototype.writeJson = function (d) {
 	
 };
 
-KodiClient.prototype.stop = function () {
-	let playerid = this.getPlayerId();
-	if (playerid !== null) {
-		this.writeJson({"method": "Player.Stop", "params": {"playerid": playerid}});
-	}
-};
-
-KodiClient.prototype.togglePaused = function () {
-	let playerid = this.getPlayerId();
-	if (playerid !== null) {
-		this.writeJson({"method": "Player.PlayPause", "params": { "playerid": playerid }});
-	}
-};
-KodiClient.prototype.navigateNext = function () {
-	let playerid = this.getPlayerId();
-	if (playerid !== null) {
-		this.writeJson({"method": "Player.GoTo", "params": {"playerid": playerid, "to": "next"}});
-	}
-};
-
-KodiClient.prototype.seekSmallForward = function () {
-	let playerid = this.getPlayerId();
-	if (playerid !== null) {
-		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "smallforward"}});
-	}
-};
-KodiClient.prototype.seekSmallBackward = function () {
-	let playerid = this.getPlayerId();
-	if (playerid !== null) {
-		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "smallbackward"}});
-	}
-};
-KodiClient.prototype.seekBigForward = function () {
-	let playerid = this.getPlayerId();
-	if (playerid !== null) {
-		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "bigforward"}});
-	}
-};
-KodiClient.prototype.seekBigBackward = function () {
-	let playerid = this.getPlayerId();
-	if (playerid !== null) {
-		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "bigbackward"}});
-	}
-};
-
-function msToTime(ms) {
-	let hours = Math.floor(ms / 60 / 60 / 1000);
-	ms -= hours*60*60*1000;
-	let minutes = Math.floor(ms / 60 / 1000);
-	ms -= minutes*60*1000;
-	let seconds = Math.floor(ms / 1000);
-	ms -= seconds*1000;
-	let milliseconds = ms;
-	return {
-		hours,
-		minutes,
-		seconds,
-		milliseconds
-	};
-	//return {"hours":0,"milliseconds":810,"minutes":36,"seconds":14}
-}
-KodiClient.prototype.seek = function (ms) {
-	let playerid = this.getPlayerId();
-	if (playerid !== null) {
-		let time = msToTime(ms);
-		this.log('seeking to', ms, time);
-		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": {"time": time}}});
-	}
-};
-
-KodiClient.prototype.navigateUp = function () {
-	this.log('navigate', 'up');
-	this.emit('navigate', 'up');
-	this.writeJson({"method": "Input.Up"});
-};
-KodiClient.prototype.navigateDown = function () {
-	this.log('navigate', 'down');
-	this.emit('navigate', 'down');
-	this.writeJson({"method": "Input.Down"});
-};
-KodiClient.prototype.navigateLeft = function () {
-	this.log('navigate', 'left');
-	this.emit('navigate', 'left');
-	this.writeJson({"method": "Input.Left"});
-};
-KodiClient.prototype.navigateRight = function () {
-	this.log('navigate', 'right');
-	this.emit('navigate', 'right');
-	this.writeJson({"method": "Input.Right"});
-};
-
-KodiClient.prototype.navigatePageDown = function () {
-	this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pagedown"}});
-};
-
-KodiClient.prototype.navigatePageUp = function () {
-	this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pageup"}});
-};
 
 
-KodiClient.prototype.navigateSelect = function () {
-	this.emit('navigate', 'select');
-	this.writeJson({"method": "Input.Select"});
-};
-KodiClient.prototype.navigateBack = function () {
-	this.emit('navigate', 'back');
-	this.writeJson({"method": "Input.Back"});
-};
 
-KodiClient.prototype.setMuted = function (muted) {
-	this.writeJson({"method": "Application.SetMute", "params": {"mute": muted}});
-};
+
+// KodiClient.prototype.toggleMute = function () {
+// 	let state = this.getState();
+// 	this.setMuted(!state.muted);
+// };
 
 
 // PROCESS RESULTS
@@ -761,32 +543,6 @@ KodiClient.prototype.onData = function (raw) {
 		this._lastData += str;
 		this.log('concating _lastData', this._lastData);
 	}
-	
-	
-	/*if (str.indexOf('}{') || str[0]!='{' || str[str.length-1]!='}') {
-		this.log('nope {}');
-	}
-	else {
-			let d;
-			try {
-				d = JSON.parse(str);
-				if (d) {
-					// this.log('success parsing onData str:', str);
-					// this.log('success parsing onData JSON:', d);
-					
-					//this._lastData = '';
-					
-					this.processData(d, str);
-					
-					//return;
-				}
-			}
-			catch (e) {
-				this.log('onData ERROR', e);
-				this.log('onData ERROR str:', str);
-				this.log('---------');
-			}
-	}*/
 	
 	
 	var lines = this._lastData.replace(/}{/g,'\}\n\{');
@@ -823,86 +579,6 @@ KodiClient.prototype.onData = function (raw) {
 		
 	}
 	this._lastData = '';
-	
-	return;
-	// if (str[str.length-1] != '}') {
-	// 	// this.log('last char = '+str[str.length-1]);
-	// 	// process.exit();
-	//
-	// 	if (this._lastData) {
-	// 		this._lastData += str;
-	//
-	// 		if (this._lastData[this._lastData.length-1] == '}') {
-	// 			str = this._lastData;
-	// 			this.log('------------------------------------------------');
-	// 			this.log('------------------------------------------------');
-	//
-	// 			this._lastData = undefined;
-	//
-	// 			this.log('will process whole chunk');
-	// 			this.log(str);
-	//
-	// 		}
-	// 		else {
-	// 			this.log('------------------------------------------------');
-	// 			this.log('------------------------------------------------');
-	//
-	// 			this.log('ADDED TO LAST CHUNK');
-	// 			this.log(this._lastData);
-	// 			return;
-	// 		}
-	//
-	// 		//process.exit();
-	//
-	// 	}
-	// 	else {
-	// 		this._lastData = str;
-	// 		return;
-	// 	}
-	// }
-	
-	var data;
-	if (str.indexOf('}{') > -1) {
-		this.log('PARSING {}');
-		
-		str = str.replace(/^\{/, '');
-		str = str.replace(/\}$/, '');
-		var dataSplit = str.split('}{');
-		var me = this;
-		dataSplit.forEach(function (d, i) {
-			data = '{' + d + '}';
-			try {
-				var d = JSON.parse(data);
-				me.processData(d, str);
-			}
-			catch(e) {
-				console.error("fail json parse, raw:");
-				this.log(raw.toString());
-				// process.exit();
-			}
-			
-			// this.log('SPLIT '+i, data);
-			
-		});
-		
-		this.log('ERROR: incomplete data?');
-		//process.exit();
-	}
-	else {
-		if (str[0]=='{' && str[1])
-			try {
-				data = JSON.parse(str);
-			}
-			catch(e) {
-				
-				this.log('JSON parse error');
-				
-				this.log(raw.toString());
-				
-				//process.exit();
-			}
-		this.processData(data, str);
-	}
 };
 
 
@@ -1082,32 +758,6 @@ KodiClient.prototype.processData = function (data, raw) {
 	}
 };
 
-KodiClient.prototype.changeSetting = function (settingId, newValue) {
-	this.log('changeSetting', settingId, newValue);
-	var settingMethodMap = {
-		volume: 'setVolume',
-		position: 'seek'
-	};
-	if (settingMethodMap[settingId]) {
-		var fn = settingMethodMap[settingId];
-		this[fn](newValue);
-	}
-	else {
-		this.log('no setting method', settingId);
-	}
-};
-
-KodiClient.prototype.createEventAction = function (actionType, options) {
-	if (this[actionType]) {
-		this[actionType](options);
-	}
-	else this.log('no action', actionType);
-};
-
-KodiClient.prototype.toggleMute = function () {
-	let state = this.getState();
-	this.setMuted(!state.muted);
-};
 
 // KodiClient.prototype.mute = function () {
 // 	this.setMuted(true);
