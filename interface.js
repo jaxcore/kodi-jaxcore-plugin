@@ -222,7 +222,8 @@ module.exports = {
 						// 	this._lastEmittedVolume = v;
 						// 	this.emit('volume', volumePercent, v);
 						// }
-
+						
+						
 						this.emit('volume', volumePercent, v);
 
 						// this.write('Z1VOL' + v + ';');
@@ -281,16 +282,22 @@ module.exports = {
 					this.writeJson({"method": "Input.Right"});
 				},
 				pageDown: function () {
+					this.log('navigate', 'pageDown');
+					this.emit('navigate', 'pageDown');
 					this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pagedown"}});
 				},
 				pageUp: function () {
+					this.log('navigate', 'pageUp');
+					this.emit('navigate', 'pageUp');
 					this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pageup"}});
 				},
 				select: function () {
+					this.log('navigate', 'select');
 					this.emit('navigate', 'select');
 					this.writeJson({"method": "Input.Select"});
 				},
 				back: function () {
+					this.log('navigate', 'back');
 					this.emit('navigate', 'back');
 					this.writeJson({"method": "Input.Back"});
 				}

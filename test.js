@@ -29,10 +29,12 @@ KodiService.connectAll(function (kodi) {
 	//
 	// Spin.connectTo('3C71BF0DC810', function(spin) {
 	//Spin.connectAll(function(spin) {
+	
 	Spin.connectWifi(function(spin) {
+		// handle reconnect
+		
 		// adapter.emit('spin-connected', spin);
 		console.log('spin connected', spin);
-		
 		
 		var adapter = new KodiAdapter(spin, kodi);
 		

@@ -3,204 +3,204 @@ var net = require("net");
 var plugin = require('jaxcore-plugin');
 var Client = plugin.Client;
 var adapterStore = plugin.createStore('Kodi Adapter Store');
+var adapter = require('./events');
 
-function KodiAdapter(spin, kodi) {
+function KodiAdapter(devices) {
 	this.constructor();
 	this.log = plugin.createLogger('Kodi Adapter');
-	this.devices = {
-		kodi: kodi,
-		spin: spin
-	};
+	this.devices = devices;
 	this.setStore(adapterStore, true);
-	this.setState({
-		spinId: spin.id,
-		kodiId: kodi.id,
-		isSmallSeeking: false,
-		isBigSeeking: false,
-		isPaging: false
-	});
 	
-	this.events = require('./events')(spin, kodi);
+	this.events = adapter(this, devices);
 	
-	this.addEvents(spin, kodi, this);
+	this.addEvents();
 }
 
 KodiAdapter.prototype = new Client();
 KodiAdapter.prototype.constructor = Client;
 
-KodiAdapter.prototype.addEvents = function(spin, kodi) {
+KodiAdapter.prototype.addEvents = function() {
 	
 	var event, device, fn;
 	var events = this.events;
 	for (device in events) {
 		for (event in events[device]) {
-			fn = events[device][event];
-			this.devices[device].on(event, fn.bind(this))
+			if (this.devices[device]) {
+				fn = events[device][event];
+				console.log('add ',device,event);
+				
+				this.devices[device].on(event, fn.bind(this))
+			}
+			else {
+				console.log('no device', device, event);
+				
+			}
 		}
 	}
 	
-	
-	return;
-	
-	spin.on('spin', function (direction, position) {
-		// console.log('spin', direction, position);
-		// if (spin.state.knobPushed) {
-		//
-		// }
-		// else {
-		// 	if (!kodi.state.playing) {
-		// 		if (spin.buffer(direction, 3, 1)) {
-		// 			if (direction === 1) kodi.navigate.down();
-		// 			else kodi.navigate.up();
-		// 		}
-		// 	}
-		// 	// if (spin.buffer(direction, 1, 1)) {
-		// 	//
-		// 	// 	if (direction === 1) kodi.audio.volumeUp();
-		// 	// 	else kodi.audio.volumeDown();
-		// 	// }
-		// }
-		
-		if (kodi.state.playing) {
-			//this.log('spin while playing', direction, position);
-			
-			if (spin.state.knobPushed) {
-				if (spin.buffer(direction, 2, 2)) {
-					this.setState({
-						isBigSeeking: true
-					});
-					if (direction === 1) kodi.player.seekBigForward();
-					else kodi.player.seekBigBackward();
-				}
-			}
-			if (spin.state.buttonPushed) {
-				if (spin.buffer(direction, 2, 2)) {
-					adapter.setState({
-						isSmallSeeking: true
-					});
-					// if (direction === 1) kodi.player.seekBigForward();
-					// kodi.player.seekBigBackward();
-					if (direction === 1) kodi.player.seekSmallForward();
-					else kodi.player.seekSmallBackward();
-				}
-			}
-			else {
-				if (spin.buffer(direction, 1, 1)) {
-					if (direction===1) kodi.audio.volumeUp();
-					else kodi.audio.volumeDown();
-				}
-			}
-			
-			// }
-			// else {
-			// 	if (spin.state.knobPushed) {
-			// 		this.setState({
-			// 			isSeeking: true
-			// 		});
-			// 		kodi.player.seekSmallBackward();
-			// 	}
-			// 	else if (spin.state.buttonPushed) {
-			// 		this.setState({
-			// 			isSeeking: true
-			// 		});
-			// 		kodi.player.seekBigBackward();
-			// 	}
-			// 	else {
-			//
-			// 	}
-			// }
-		}
-		else {
-			//this.log('spin while navigating', direction, position);
-			if (direction === 1) {
-				if (spin.state.knobPushed) {
-					if (spin.buffer(direction, 2, 2)) {
-						kodi.navigate.pageDown();
-					}
-				}
-				else if (spin.state.buttonPushed) {
-					if (spin.buffer(direction, 3, 5)) {
-						kodi.navigate.right();
-					}
-				}
-				else {
-					if (spin.buffer(direction, 4, 5)) {
-						kodi.navigate.down();
-					}
-				}
-			}
-			else {
-				if (spin.state.knobPushed) {
-					if (spin.buffer(direction, 2, 2)) {
-						kodi.navigate.pageUp();
-					}
-				}
-				else if (spin.state.buttonPushed) {
-					if (spin.buffer(direction, 3, 5)) {
-						kodi.navigate.left();
-					}
-				}
-				else {
-					if (spin.buffer(direction, 4, 5)) {
-						kodi.navigate.up();
-					}
-				}
-			}
-		}
-		
-	});
-	
-	spin.on('button', function (pushed) {
-		console.log('button', pushed);
-		if (!pushed) {
-			if (adapter.isSmallSeeking || adapter.isBigSeeking) {
-				return;
-			}
-			if (kodi.state.playing) {
-				kodi.player.stop();
-			}
-			else {
-				kodi.navigate.back();
-			}
-		}
-	});
-	
-	spin.on('button-hold', function () {
-		if (adapter.isSmallSeeking || adapter.isBigSeeking) {
-			adapter.setState({
-				isSmallSeeking: false,
-				isBigSeeking: false,
-				isPaging: false
-			});
-			return;
-		}
-		console.log('button-hold');
-		// kodi.system.togglePower();
-	});
-	
-	spin.on('knob', function (pushed) {
-		console.log('knob', pushed);
-		if (!pushed) {
-			if (adapter.isSmallSeeking || adapter.isBigSeeking) {
-				adapter.setState({
-					isSmallSeeking: false,
-					isBigSeeking: false,
-					isPaging: false
-				});
-				return;
-			}
-			
-			// kodi.audio.toggleMuted();
-			
-			if (kodi.state.playing) {
-				kodi.player.playPause();
-			}
-			else {
-				kodi.navigate.select();
-			}
-		}
-	});
-	
+	//
+	//
+	// return;
+	//
+	// spin.on('spin', function (direction, position) {
+	// 	// console.log('spin', direction, position);
+	// 	// if (spin.state.knobPushed) {
+	// 	//
+	// 	// }
+	// 	// else {
+	// 	// 	if (!kodi.state.playing) {
+	// 	// 		if (spin.buffer(direction, 3, 1)) {
+	// 	// 			if (direction === 1) kodi.navigate.down();
+	// 	// 			else kodi.navigate.up();
+	// 	// 		}
+	// 	// 	}
+	// 	// 	// if (spin.buffer(direction, 1, 1)) {
+	// 	// 	//
+	// 	// 	// 	if (direction === 1) kodi.audio.volumeUp();
+	// 	// 	// 	else kodi.audio.volumeDown();
+	// 	// 	// }
+	// 	// }
+	//
+	// 	if (kodi.state.playing) {
+	// 		//this.log('spin while playing', direction, position);
+	//
+	// 		if (spin.state.knobPushed) {
+	// 			if (spin.buffer(direction, 2, 2)) {
+	// 				this.setState({
+	// 					isBigSeeking: true
+	// 				});
+	// 				if (direction === 1) kodi.player.seekBigForward();
+	// 				else kodi.player.seekBigBackward();
+	// 			}
+	// 		}
+	// 		if (spin.state.buttonPushed) {
+	// 			if (spin.buffer(direction, 2, 2)) {
+	// 				adapter.setState({
+	// 					isSmallSeeking: true
+	// 				});
+	// 				// if (direction === 1) kodi.player.seekBigForward();
+	// 				// kodi.player.seekBigBackward();
+	// 				if (direction === 1) kodi.player.seekSmallForward();
+	// 				else kodi.player.seekSmallBackward();
+	// 			}
+	// 		}
+	// 		else {
+	// 			if (spin.buffer(direction, 1, 1)) {
+	// 				if (direction===1) kodi.audio.volumeUp();
+	// 				else kodi.audio.volumeDown();
+	// 			}
+	// 		}
+	//
+	// 		// }
+	// 		// else {
+	// 		// 	if (spin.state.knobPushed) {
+	// 		// 		this.setState({
+	// 		// 			isSeeking: true
+	// 		// 		});
+	// 		// 		kodi.player.seekSmallBackward();
+	// 		// 	}
+	// 		// 	else if (spin.state.buttonPushed) {
+	// 		// 		this.setState({
+	// 		// 			isSeeking: true
+	// 		// 		});
+	// 		// 		kodi.player.seekBigBackward();
+	// 		// 	}
+	// 		// 	else {
+	// 		//
+	// 		// 	}
+	// 		// }
+	// 	}
+	// 	else {
+	// 		//this.log('spin while navigating', direction, position);
+	// 		if (direction === 1) {
+	// 			if (spin.state.knobPushed) {
+	// 				if (spin.buffer(direction, 2, 2)) {
+	// 					kodi.navigate.pageDown();
+	// 				}
+	// 			}
+	// 			else if (spin.state.buttonPushed) {
+	// 				if (spin.buffer(direction, 3, 5)) {
+	// 					kodi.navigate.right();
+	// 				}
+	// 			}
+	// 			else {
+	// 				if (spin.buffer(direction, 4, 5)) {
+	// 					kodi.navigate.down();
+	// 				}
+	// 			}
+	// 		}
+	// 		else {
+	// 			if (spin.state.knobPushed) {
+	// 				if (spin.buffer(direction, 2, 2)) {
+	// 					kodi.navigate.pageUp();
+	// 				}
+	// 			}
+	// 			else if (spin.state.buttonPushed) {
+	// 				if (spin.buffer(direction, 3, 5)) {
+	// 					kodi.navigate.left();
+	// 				}
+	// 			}
+	// 			else {
+	// 				if (spin.buffer(direction, 4, 5)) {
+	// 					kodi.navigate.up();
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	//
+	// });
+	//
+	// spin.on('button', function (pushed) {
+	// 	console.log('button', pushed);
+	// 	if (!pushed) {
+	// 		if (adapter.isSmallSeeking || adapter.isBigSeeking) {
+	// 			return;
+	// 		}
+	// 		if (kodi.state.playing) {
+	// 			kodi.player.stop();
+	// 		}
+	// 		else {
+	// 			kodi.navigate.back();
+	// 		}
+	// 	}
+	// });
+	//
+	// spin.on('button-hold', function () {
+	// 	if (adapter.isSmallSeeking || adapter.isBigSeeking) {
+	// 		adapter.setState({
+	// 			isSmallSeeking: false,
+	// 			isBigSeeking: false,
+	// 			isPaging: false
+	// 		});
+	// 		return;
+	// 	}
+	// 	console.log('button-hold');
+	// 	// kodi.system.togglePower();
+	// });
+	//
+	// spin.on('knob', function (pushed) {
+	// 	console.log('knob', pushed);
+	// 	if (!pushed) {
+	// 		if (adapter.isSmallSeeking || adapter.isBigSeeking) {
+	// 			adapter.setState({
+	// 				isSmallSeeking: false,
+	// 				isBigSeeking: false,
+	// 				isPaging: false
+	// 			});
+	// 			return;
+	// 		}
+	//
+	// 		// kodi.audio.toggleMuted();
+	//
+	// 		if (kodi.state.playing) {
+	// 			kodi.player.playPause();
+	// 		}
+	// 		else {
+	// 			kodi.navigate.select();
+	// 		}
+	// 	}
+	// });
+	//
 	
 };
 

@@ -1,7 +1,19 @@
-module.exports = function(spin, kodi) {
+module.exports = function(adapter, devices) {
+	var spin = devices.spin;
+	var kodi = devices.kodi;
+	var receiver = devices.receiver;
+	
+	adapter.setState({
+		didSeek: false,
+		isSmallSeeking: false,
+		isBigSeeking: false,
+	});
+	
 	return {
 		spin: {
 			spin: function (direction, position) {
+				
+				
 				
 				if (kodi.state.playing) {
 					//this.log('spin while playing', direction, position);
@@ -15,7 +27,10 @@ module.exports = function(spin, kodi) {
 							else kodi.player.seekBigBackward();
 						}
 					}
-					if (spin.state.buttonPushed) {
+					else if (spin.state.buttonPushed) {
+						
+						// bug: still in seeking mode after this
+						
 						if (spin.buffer(direction, 2, 2)) {
 							this.setState({
 								isSmallSeeking: true
@@ -28,32 +43,19 @@ module.exports = function(spin, kodi) {
 					}
 					else {
 						if (spin.buffer(direction, 1, 1)) {
-							if (direction === 1) kodi.audio.volumeUp();
-							else kodi.audio.volumeDown();
+							
+							if (receiver) {
+								if (direction === 1) receiver.audio.volumeUp();
+								else receiver.audio.volumeDown();
+							}
+							else {
+								if (direction === 1) kodi.audio.volumeUp();
+								else kodi.audio.volumeDown();
+							}
 						}
 					}
-					
-					// }
-					// else {
-					// 	if (spin.state.knobPushed) {
-					// 		this.setState({
-					// 			isSeeking: true
-					// 		});
-					// 		kodi.player.seekSmallBackward();
-					// 	}
-					// 	else if (spin.state.buttonPushed) {
-					// 		this.setState({
-					// 			isSeeking: true
-					// 		});
-					// 		kodi.player.seekBigBackward();
-					// 	}
-					// 	else {
-					//
-					// 	}
-					// }
 				}
 				else {
-					//this.log('spin while navigating', direction, position);
 					if (direction === 1) {
 						if (spin.state.knobPushed) {
 							if (spin.buffer(direction, 2, 2)) {
@@ -95,7 +97,16 @@ module.exports = function(spin, kodi) {
 			button: function (pushed) {
 				console.log('button', pushed);
 				if (!pushed) {
-					if (adapter.isSmallSeeking || adapter.isBigSeeking) {
+					if (adapter.state.isSmallSeeking) {
+						this.setState({
+							isSmallSeeking: false
+						});
+						return;
+					}
+					if (adapter.state.isBigSeeking) {
+						this.setState({
+							isBigSeeking: false
+						});
 						return;
 					}
 					if (kodi.state.playing) {
@@ -108,12 +119,9 @@ module.exports = function(spin, kodi) {
 			},
 			
 			buttonHold: function () {
-				if (adapter.isSmallSeeking || adapter.isBigSeeking) {
-					adapter.setState({
-						isSmallSeeking: false,
-						isBigSeeking: false,
-						isPaging: false
-					});
+				// if (receiver) nextInput
+				if (adapter.state.isSmallSeeking || adapter.state.isBigSeeking) {
+					
 					return;
 				}
 				console.log('button-hold');
@@ -123,7 +131,7 @@ module.exports = function(spin, kodi) {
 			knob: function (pushed) {
 				console.log('knob', pushed);
 				if (!pushed) {
-					if (adapter.isSmallSeeking || adapter.isBigSeeking) {
+					if (adapter.state.isSmallSeeking || adapter.state.isBigSeeking) {
 						adapter.setState({
 							isSmallSeeking: false,
 							isBigSeeking: false,
@@ -147,8 +155,27 @@ module.exports = function(spin, kodi) {
 		kodi: {
 			volume: function(vol, percent) {
 				console.log('vol', vol, percent);
+				spin.scale(percent, 0, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
+			},
+			navigate: function(type) {
+				switch (type) {
+					case 'up': spin.rotate(-1, 0, [255,0,0], [0, 0,255]); break;
+					case 'down': spin.rotate(1, 0, [255,0,0], [0, 0,255]); break;
+					case 'left': spin.rotate(-1, 0, [255,0,0], [0, 0,255]); break;
+					case 'right': spin.rotate(1, 0, [255,0,0], [0, 0,255]); break;
+					case 'pageUp': spin.rotate(-1, 0, [255,0,0], [0, 0,255]); break;
+					case 'pageDown': spin.rotate(1, 0, [255,0,0], [0, 0,255]); break;
+					case 'select': spin.flash([0,255,0]); break;
+					// case 'back': spin.flash([255,0,255]); break;
+				}
 				
-				// spin.
+			}
+		},
+		
+		receiver: {
+			volume: function(percent) {
+				console.log('receiver vol', percent);
+				spin.scale(percent, 0, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
 			}
 		}
 	};
