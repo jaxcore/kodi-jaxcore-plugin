@@ -104,6 +104,7 @@ KodiClient.prototype.onError = function(data) {
 KodiClient.prototype.connect = function() {
 	this.log('connecting', this.state.host+':'+this.state.port);
 	this.setState({
+		connecting: true,
 		status: 'connecting'
 	});
 	
@@ -120,6 +121,8 @@ KodiClient.prototype.onConnect = function() {
 	this.reconnecting = false;
 	this.reconnectCount = 0;
 	this.setState({
+		connected: true,
+		connecting: false,
 		status: 'connected',
 		reconnectCount: 0,
 		reconnecting: false
@@ -480,7 +483,8 @@ KodiClient.prototype._processMuted = function (muted) {
 // };
 
 KodiClient.prototype.isConnected = function() {
-	return (this.state.status === 'connected');
+	//return (this.state.status === 'connected');
+	return this.state.connected;
 };
 
 KodiClient.prototype.writeJson = function (d) {

@@ -7,13 +7,21 @@ module.exports = function(adapter, devices) {
 		didSeek: false,
 		isSmallSeeking: false,
 		isBigSeeking: false,
+		skipNext: false,
+		skippedNext: false
 	});
 	
 	return {
 		spin: {
 			spin: function (direction, position) {
+				console.log('adapter'+adapter.instance,'spin',direction);
 				
-				
+				if (adapter.state.skipNext) {
+					adapter.setState({
+						skipNext: false
+					});
+					console.log('stopping skipNext');
+				}
 				
 				if (kodi.state.playing) {
 					//this.log('spin while playing', direction, position);
@@ -25,6 +33,7 @@ module.exports = function(adapter, devices) {
 							});
 							if (direction === 1) kodi.player.seekBigForward();
 							else kodi.player.seekBigBackward();
+							spin.rotate(direction, 0);
 						}
 					}
 					else if (spin.state.buttonPushed) {
@@ -39,27 +48,30 @@ module.exports = function(adapter, devices) {
 							// kodi.player.seekBigBackward();
 							if (direction === 1) kodi.player.seekSmallForward();
 							else kodi.player.seekSmallBackward();
+							spin.rotate(direction, 1);
 						}
 					}
 					else {
-						if (spin.buffer(direction, 1, 1)) {
-							
-							if (receiver) {
+						if (receiver) {
+							if (spin.buffer(direction, 2, 1)) {
 								if (direction === 1) receiver.audio.volumeUp();
 								else receiver.audio.volumeDown();
 							}
-							else {
-								if (direction === 1) kodi.audio.volumeUp();
-								else kodi.audio.volumeDown();
-							}
+						}
+						else {
+							if (direction === 1) kodi.audio.volumeUp();
+							else kodi.audio.volumeDown();
 						}
 					}
 				}
 				else {
 					if (direction === 1) {
 						if (spin.state.knobPushed) {
-							if (spin.buffer(direction, 2, 2)) {
+							if (spin.buffer(direction, 1, 1)) {
 								kodi.navigate.pageDown();
+								adapter.setState({
+									isPaging: true
+								});
 							}
 						}
 						else if (spin.state.buttonPushed) {
@@ -75,8 +87,11 @@ module.exports = function(adapter, devices) {
 					}
 					else {
 						if (spin.state.knobPushed) {
-							if (spin.buffer(direction, 2, 2)) {
+							if (spin.buffer(direction, 1, 1)) {
 								kodi.navigate.pageUp();
+								adapter.setState({
+									isPaging: true
+								});
 							}
 						}
 						else if (spin.state.buttonPushed) {
@@ -95,18 +110,29 @@ module.exports = function(adapter, devices) {
 			},
 			
 			button: function (pushed) {
-				console.log('button', pushed);
+				console.log('adapter'+adapter.instance, 'button', pushed);
+				if (pushed) {
+					this.setState({
+						skipNext: true
+					});
+					spin.bufferReset();
+				}
 				if (!pushed) {
-					if (adapter.state.isSmallSeeking) {
-						this.setState({
-							isSmallSeeking: false
+					if (adapter.state.skippedNext) {
+						console.log('button release skippedNext');
+						adapter.setState({
+							skippedNext: false
 						});
 						return;
 					}
-					if (adapter.state.isBigSeeking) {
-						this.setState({
-							isBigSeeking: false
+					
+					if (adapter.state.isSmallSeeking || adapter.state.isBigSeeking) {
+						adapter.setState({
+							isSmallSeeking: false,
+							isBigSeeking: false,
+							isPaging: false
 						});
+						console.log('cancelled');
 						return;
 					}
 					if (kodi.state.playing) {
@@ -120,11 +146,26 @@ module.exports = function(adapter, devices) {
 			
 			buttonHold: function () {
 				// if (receiver) nextInput
-				if (adapter.state.isSmallSeeking || adapter.state.isBigSeeking) {
-					
-					return;
+				// if (adapter.state.isSmallSeeking || adapter.state.isBigSeeking) {
+				// 	adapter.setState({
+				// 		isSmallSeeking: false,
+				// 		isBigSeeking: false,
+				// 		isPaging: false
+				// 	});
+				// 	console.log('cancelled');
+				// 	return;
+				// }this.setState({
+				
+				if (adapter.state.skipNext) {
+					this.setState({
+						skipNext: false,
+						skippedNext: true
+					});
+					console.log('button-hold skipNext');
+					kodi.navigate.next();
 				}
-				console.log('button-hold');
+				else console.log('btton-hold no skip');
+				
 				// kodi.system.togglePower();
 			},
 			
@@ -134,12 +175,18 @@ module.exports = function(adapter, devices) {
 					if (adapter.state.isSmallSeeking || adapter.state.isBigSeeking) {
 						adapter.setState({
 							isSmallSeeking: false,
-							isBigSeeking: false,
-							isPaging: false
+							isBigSeeking: false
 						});
+						console.log('seeking cancelled');
 						return;
 					}
-					
+					if (adapter.state.isPaging) {
+						adapter.setState({
+							isPaging: false
+						});
+						console.log('isPaging cancelled');
+						return;
+					}
 					// kodi.audio.toggleMuted();
 					
 					if (kodi.state.playing) {
@@ -153,8 +200,8 @@ module.exports = function(adapter, devices) {
 		},
 		
 		kodi: {
-			volume: function(vol, percent) {
-				console.log('vol', vol, percent);
+			volume: function(percent) {
+				console.log('volume', percent);
 				spin.scale(percent, 0, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
 			},
 			navigate: function(type) {

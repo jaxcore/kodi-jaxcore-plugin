@@ -19,8 +19,6 @@ var KodiAdapter = require('./adapter2');
 // 	isPaging: false
 // });
 
-
-
 KodiService.connectAll(function (kodi) {
 	console.log('connected Kodi', kodi.state);
 	
@@ -30,13 +28,24 @@ KodiService.connectAll(function (kodi) {
 	// Spin.connectTo('3C71BF0DC810', function(spin) {
 	//Spin.connectAll(function(spin) {
 	
+	var instances = 0;
+	
 	Spin.connectWifi(function(spin) {
 		// handle reconnect
 		
-		// adapter.emit('spin-connected', spin);
-		console.log('spin connected', spin);
+		instances++;
 		
-		var adapter = new KodiAdapter(spin, kodi);
+		// adapter.emit('spin-connected', spin);
+		console.log('adapter spin connected', instances);
+		
+		var adapter = new KodiAdapter({
+			spin: spin,
+			kodi: kodi
+		});
+		
+		console.log('adapter created', adapter.state);
+		
+		//this.addEvents();
 		
 	});
 });

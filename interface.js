@@ -32,6 +32,10 @@ module.exports = {
 			type: 'integer',
 			defaultValue: 0
 		},
+		connected: {
+			type: 'boolean',
+			defaultValue: false
+		},
 		identity: {
 			type: 'string',
 			defaultValue: ''
@@ -260,7 +264,12 @@ module.exports = {
 						this.writeJson({"method": "Player.GoTo", "params": {"playerid": playerid, "to": "next"}});
 					}
 				},
-				
+				previous: function () {
+					let playerid = this.getPlayerId();
+					if (playerid !== null) {
+						this.writeJson({"method": "Player.GoTo", "params": {"playerid": playerid, "to": "previous"}});
+					}
+				},
 				up: function () {
 					this.log('navigate', 'up');
 					this.emit('navigate', 'up');
