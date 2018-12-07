@@ -30,20 +30,21 @@ KodiService.connectAll(function (kodi) {
 	
 	var instances = 0;
 	
-	Spin.connectWifi(function(spin) {
+	//Spin.connectWifi(function(spin) {
+	Spin.connectBLE(function(spin) {
 		// handle reconnect
 		
 		instances++;
 		
 		// adapter.emit('spin-connected', spin);
-		console.log('adapter spin connected', instances);
 		
 		var adapter = new KodiAdapter({
 			spin: spin,
 			kodi: kodi
 		});
 		
-		console.log('adapter created', adapter.state);
+		console.log('adapter spin connected', instances);
+		//console.log('adapter created', adapter.state);
 		
 		//this.addEvents();
 		

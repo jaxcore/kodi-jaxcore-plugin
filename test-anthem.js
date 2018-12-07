@@ -35,7 +35,8 @@ anthemService.on('connect', function(receiver) {
 		// Spin.connectTo('3C71BF0DC810', function(spin) {
 		//Spin.connectAll(function(spin) {
 
-		Spin.connectAll(function(spin) {
+		// Spin.connectWifi(function(spin) {
+		Spin.connectBLE(function(spin) {
 			// handle reconnect
 
 			// adapter.emit('spin-connected', spin);

@@ -8,7 +8,8 @@ module.exports = function(adapter, devices) {
 		isSmallSeeking: false,
 		isBigSeeking: false,
 		skipNext: false,
-		skippedNext: false
+		skippedNext: false,
+		didNavLeftRight: false
 	});
 	
 	return {
@@ -24,8 +25,6 @@ module.exports = function(adapter, devices) {
 				}
 				
 				if (kodi.state.playing) {
-					//this.log('spin while playing', direction, position);
-					
 					if (spin.state.knobPushed) {
 						if (spin.buffer(direction, 2, 2)) {
 							this.setState({
@@ -37,15 +36,10 @@ module.exports = function(adapter, devices) {
 						}
 					}
 					else if (spin.state.buttonPushed) {
-						
-						// bug: still in seeking mode after this
-						
 						if (spin.buffer(direction, 2, 2)) {
 							this.setState({
 								isSmallSeeking: true
 							});
-							// if (direction === 1) kodi.player.seekBigForward();
-							// kodi.player.seekBigBackward();
 							if (direction === 1) kodi.player.seekSmallForward();
 							else kodi.player.seekSmallBackward();
 							spin.rotate(direction, 1);
@@ -77,6 +71,9 @@ module.exports = function(adapter, devices) {
 						else if (spin.state.buttonPushed) {
 							if (spin.buffer(direction, 3, 5)) {
 								kodi.navigate.right();
+								adapter.setState({
+									didNavLeftRight: true
+								});
 							}
 						}
 						else {
@@ -97,6 +94,9 @@ module.exports = function(adapter, devices) {
 						else if (spin.state.buttonPushed) {
 							if (spin.buffer(direction, 3, 5)) {
 								kodi.navigate.left();
+								adapter.setState({
+									didNavLeftRight: true
+								});
 							}
 						}
 						else {
@@ -126,6 +126,14 @@ module.exports = function(adapter, devices) {
 						return;
 					}
 					
+					if (adapter.state.didNavLeftRight) {
+						console.log('button release didNavLeftRight');
+						adapter.setState({
+							didNavLeftRight: false
+						});
+						return;
+					}
+					
 					if (adapter.state.isSmallSeeking || adapter.state.isBigSeeking) {
 						adapter.setState({
 							isSmallSeeking: false,
@@ -145,28 +153,16 @@ module.exports = function(adapter, devices) {
 			},
 			
 			buttonHold: function () {
-				// if (receiver) nextInput
-				// if (adapter.state.isSmallSeeking || adapter.state.isBigSeeking) {
-				// 	adapter.setState({
-				// 		isSmallSeeking: false,
-				// 		isBigSeeking: false,
-				// 		isPaging: false
-				// 	});
-				// 	console.log('cancelled');
-				// 	return;
-				// }this.setState({
-				
 				if (adapter.state.skipNext) {
 					this.setState({
 						skipNext: false,
 						skippedNext: true
 					});
 					console.log('button-hold skipNext');
+					
 					kodi.navigate.next();
 				}
 				else console.log('btton-hold no skip');
-				
-				// kodi.system.togglePower();
 			},
 			
 			knob: function (pushed) {
@@ -187,7 +183,6 @@ module.exports = function(adapter, devices) {
 						console.log('isPaging cancelled');
 						return;
 					}
-					// kodi.audio.toggleMuted();
 					
 					if (kodi.state.playing) {
 						kodi.player.playPause();

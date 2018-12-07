@@ -60,9 +60,10 @@ KodiAdapter.prototype.addEvents = function() {
 		this.log('Adapter active');
 	}
 	else {
-		this.log('not connected', 'kodi='+this.devices.kodi.state.connected, 'spin='+this.devices.spin.state.connected)
-		console.log(this.devices.spin.state)
-		process.exit();
+		this.log('kodi connected?', this.devices.kodi.state.connected);
+		this.log('spin connected?', this.devices.spin.state.connected);
+		//console.log('oops', this.devices.spin.state)
+		// process.exit();
 	}
 };
 
