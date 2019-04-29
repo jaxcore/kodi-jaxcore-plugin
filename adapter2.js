@@ -18,8 +18,7 @@ function KodiAdapter(devices) {
 		id: id
 	});
 	
-	this.events = adapter(this, devices);
-	this._removeEvents = this.removeEvents.bind(this);
+	
 	this.addEvents();
 }
 
@@ -27,8 +26,12 @@ KodiAdapter.prototype = new Client();
 KodiAdapter.prototype.constructor = Client;
 
 KodiAdapter.prototype.addEvents = function() {
+	this.events = adapter(this, this.devices);
+	this._removeEvents = this.removeEvents.bind(this);
+	
 	if (this.state.adapterActive) {
 		this.log('already active');
+		process.exit();
 		return;
 	}
 	
@@ -54,16 +57,19 @@ KodiAdapter.prototype.addEvents = function() {
 		}
 		
 		this.devices.spin.on('disconnect',this._removeEvents);
-		this.devices.kodi.on('disconnect',this._removeEvents);
+		// this.devices.kodi.on('disconnect',this._removeEvents);
+		
+		this.devices.kodi.on('destroy',this._removeEvents);
 		
 		this.setState({adapterActive: true});
 		this.log('Adapter active');
+		
 	}
 	else {
 		this.log('kodi connected?', this.devices.kodi.state.connected);
 		this.log('spin connected?', this.devices.spin.state.connected);
-		//console.log('oops', this.devices.spin.state)
-		// process.exit();
+		console.log('adapter devices not connected', this.state);
+		process.exit();
 	}
 };
 
@@ -107,6 +113,8 @@ KodiAdapter.prototype.removeEvents = function() {
 	this.devices.kodi.removeListener('disconnect',this._removeEvents);
 	
 	this.setState({adapterActive:false});
+	
+	this.emit('destroy');
 	
 };
 

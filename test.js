@@ -5,12 +5,15 @@ var KodiService = require('./service');
 var host = process.env.KODI_HOST || 'localhost';
 console.log('connecting to', host);
 
-KodiService.add({
+var kodi = KodiService.create({
 	host: host,
 	port: 9090
 });
+kodi.on('connect', function() {
+	console.log('kodi connected', kodi.state);
+});
+kodi.connect();
 
-var KodiAdapter = require('./adapter2');
 
 // var adapter = plugin.createStore('Kodi Adapter Store');
 // adapter.setState({
@@ -19,34 +22,44 @@ var KodiAdapter = require('./adapter2');
 // 	isPaging: false
 // });
 
-KodiService.connectAll(function (kodi) {
-	console.log('connected Kodi', kodi.state);
-	
-	// console.log('kodi', kodi);
-	// return;
-	//
-	// Spin.connectTo('3C71BF0DC810', function(spin) {
-	//Spin.connectAll(function(spin) {
-	
-	var instances = 0;
-	
-	//Spin.connectWifi(function(spin) {
-	Spin.connectBLE(function(spin) {
-		// handle reconnect
-		
+var KodiAdapter = require('./adapter2');
+
+var instances = 0;
+
+if (process.argv[2]==='2') {
+	Spin.connectBLE([
+		'b6fccf36ef6f419995b3b31c4eb972c6',
+		'ec0203503a7f474c879d5a4202c81b61'
+	], function (spin) {
 		instances++;
+		console.log('connected ble', instances);
 		
-		// adapter.emit('spin-connected', spin);
-		
-		var adapter = new KodiAdapter({
-			spin: spin,
-			kodi: kodi
-		});
-		
-		console.log('adapter spin connected', instances);
-		//console.log('adapter created', adapter.state);
-		
-		//this.addEvents();
-		
+		createAdapter(kodi, spin);
 	});
-});
+}
+else {
+	Spin.connectBLE(function (spin) {
+		instances++;
+		console.log('connected ble', instances);
+		
+		createAdapter(kodi, spin);
+	});
+}
+
+function createAdapter(kodi, spin) {
+	var adapter = new KodiAdapter({
+		spin: spin,
+		kodi: kodi
+	});
+	console.log('adapter created', instances);
+	
+	var _interval = setInterval(function() {
+		console.log('adapter:', adapter.state.id, 'active='+adapter.state.adapterActive)
+	}, 1000);
+	
+	adapter.on('destroy', function() {
+		console.log('adapter destroyed', adapter.state.id);
+		clearInterval(_interval);
+	});
+	
+}

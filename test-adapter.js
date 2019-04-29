@@ -1,4 +1,4 @@
-var Spin = require('jaxcore-spin');
+ var Spin = require('jaxcore-spin');
 var KodiAdapter = require('./adapter');
 //var Kodi = require('./client');
 

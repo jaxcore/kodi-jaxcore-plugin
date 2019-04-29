@@ -36,19 +36,27 @@ anthemService.on('connect', function(receiver) {
 		//Spin.connectAll(function(spin) {
 
 		// Spin.connectWifi(function(spin) {
-		Spin.connectBLE(function(spin) {
+		//Spin.connectBLE(['8ac0ad8cd7644e9c8dad3135d7cc291a'], function(spin) {
+		
+		
+		// Spin.connectAll(function(spin) {
+		Spin.connectWifi(function(spin) {
 			// handle reconnect
-
-			// adapter.emit('spin-connected', spin);
-			console.log('spin connected', spin);
 			
-			var devices = {
-				spin: spin,
-				kodi: kodi,
-				receiver: receiver
-			};
-			var adapter = new KodiAdapter(devices);
-
+			spin.on('connect', function() {
+				// adapter.emit('spin-connected', spin);
+				console.log('spin connected', spin.state);
+				
+				var devices = {
+					spin: spin,
+					kodi: kodi,
+					receiver: receiver
+				};
+				var adapter = new KodiAdapter(devices);
+			
+			});
+			
+			
 		});
 	});
 

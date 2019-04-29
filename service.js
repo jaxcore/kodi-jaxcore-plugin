@@ -13,6 +13,18 @@ function KodiService() {
 KodiService.prototype = new EventEmitter();
 KodiService.prototype.constructor = EventEmitter;
 
+KodiService.prototype.create = function (config) {
+	// KodiService.connectAll(function (kodi) {
+	// 	console.log('connected Kodi', kodi.state);
+	//
+	// 	var instances = 0;
+	//
+	// 	// Spin.connectAll(function(spin) {
+	// });
+	
+	return this.add(config);
+};
+
 KodiService.prototype.add = function (config) {
 	var id = KodiClient.id(config);
 	config.id = id;
@@ -33,6 +45,8 @@ KodiService.prototype.add = function (config) {
 	this.clients[id].once('disconnect', function () {
 		me.emit('disconnect', me.clients[id]);
 	});
+	
+	return this.clients[id];
 };
 KodiService.prototype.remove = function (id) {
 	if (this.devices[id]) this.devices[id].destroy();
@@ -41,7 +55,7 @@ KodiService.prototype.remove = function (id) {
 
 KodiService.prototype.connect = function (id, callback) {
 	if (callback) {
-		this.clients[id].once('connect', callback);
+		this.clients[id].on('connect', callback);
 	}
 	this.clients[id].connect();
 };
@@ -52,7 +66,7 @@ KodiService.prototype.disconnect = function (id, callback) {
 KodiService.prototype.connectAll = function(callback) {
 	log('connectAll')
 	for (var id in this.clients) {
-		log('connectAll', id)
+		log('connectAll', id);
 		this.connect(id, callback);
 	}
 };

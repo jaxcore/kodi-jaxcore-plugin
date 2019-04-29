@@ -140,7 +140,7 @@ module.exports = {
 					this.audio.muted(true);
 				},
 				unmute: function () {
-					this.audio.muted(false);;
+					this.audio.muted(false);
 				}
 			},
 			settings: {

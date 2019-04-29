@@ -24,6 +24,7 @@ function KodiClient(config) {
 	this.mq = {};
 	this.lastVolumeTime = 0;
 	this.reconnect = 2000;
+	this.reconnectCount = 0;
 	
 	this._onError = this.onError.bind(this);
 	this._onData = this.onData.bind(this);
@@ -61,16 +62,18 @@ KodiClient.prototype.onClose = function() {
 		this.client.destroy();
 		delete this.client;
 	}
+	
 	this.stopMonitor();
 	
 	var wasConnected = this.isConnected();
 	var reconnecting = this.reconnect>0;
-	var reconnectCount = this.state.reconnectCount + 1;
+	this.reconnectCount ++;
 	
 	this.setState({
+		connected: false,
 		status: 'disconnected',
 		reconnecting: reconnecting,
-		reconnectCount
+		
 	});
 	
 	if (wasConnected) {
@@ -82,7 +85,7 @@ KodiClient.prototype.onClose = function() {
 	}
 	
 	if (reconnecting) {
-		this.log('reconnecting...',reconnectCount);
+		this.log('reconnecting...', this.reconnectCount);
 		var me = this;
 		setTimeout(function() {
 			if (me.reconnect>0) me.connect();
@@ -110,6 +113,11 @@ KodiClient.prototype.connect = function() {
 	
 	this.client = new net.Socket();
 	this.client.setNoDelay(true);
+	var me = this;
+	// this.client.setTimeout(10000, function () {
+	// 	me.log('timeout', me.state);
+	// 	me.client.destroy();
+	// });
 	this.client.on('error', this._onError);
 	this.client.on('data', this._onData);
 	this.client.on('close', this._onClose);
@@ -118,6 +126,8 @@ KodiClient.prototype.connect = function() {
 	
 };
 KodiClient.prototype.onConnect = function() {
+	console.log('client onConnect');
+	var me = this;
 	this.reconnecting = false;
 	this.reconnectCount = 0;
 	this.setState({
@@ -127,19 +137,27 @@ KodiClient.prototype.onConnect = function() {
 		reconnectCount: 0,
 		reconnecting: false
 	});
-	this.log('connected', this.host);
+	this.log('connected', this.state.host);
 	
 	this.isFirstUpdate = true;
 	
-	var me = this;
 	this.once('volume', function() {
-		if (me.isFirstUpdate) {
-			me.isFirstUpdate = false;
-			this.emit('connect', me);  // emit after first data update?
-			this.startMonitor();
-		}
+		// if (me.isFirstUpdate) {
+		// 	me.isFirstUpdate = false;
+		// }
+		
+		console.log('got volume!');
+		
 	});
+	
+	
 	this.update();
+	
+	me.startMonitor();
+	
+	console.log('emit connect');
+	me.emit('connect', me);  // emit after first data update?
+	
 	
 	// this.emit('connect', this);  // emit after first data update?
 	// this.startMonitor();

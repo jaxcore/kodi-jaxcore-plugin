@@ -25,14 +25,19 @@ module.exports = function(adapter, devices) {
 				}
 				
 				if (kodi.state.playing) {
-					if (spin.state.knobPushed) {
+					if (kodi.state.paused) {
+						spin.flash([255,255,0]);
+					}
+					else if (spin.state.knobPushed) {
 						if (spin.buffer(direction, 2, 2)) {
 							this.setState({
 								isBigSeeking: true
 							});
 							if (direction === 1) kodi.player.seekBigForward();
 							else kodi.player.seekBigBackward();
-							spin.rotate(direction, 0);
+							
+							// spin.rotate(direction, 0);
+							spin.rotate(direction, 0, [255,100,100], [255,200,200]);
 						}
 					}
 					else if (spin.state.buttonPushed) {
@@ -42,7 +47,10 @@ module.exports = function(adapter, devices) {
 							});
 							if (direction === 1) kodi.player.seekSmallForward();
 							else kodi.player.seekSmallBackward();
-							spin.rotate(direction, 1);
+							
+							// spin.rotate(direction, 1);
+							spin.rotate(direction, 0, [255,100,100], [0,0,0]);
+							
 						}
 					}
 					else {
@@ -77,7 +85,7 @@ module.exports = function(adapter, devices) {
 							}
 						}
 						else {
-							if (spin.buffer(direction, 4, 5)) {
+							if (spin.buffer(direction, 2, 1, 200)) {
 								kodi.navigate.down();
 							}
 						}
@@ -100,7 +108,7 @@ module.exports = function(adapter, devices) {
 							}
 						}
 						else {
-							if (spin.buffer(direction, 4, 5)) {
+							if (spin.buffer(direction, 2, 1, 200)) {
 								kodi.navigate.up();
 							}
 						}
@@ -185,6 +193,12 @@ module.exports = function(adapter, devices) {
 					}
 					
 					if (kodi.state.playing) {
+						if (kodi.state.paused) {
+							spin.scale(kodi.state.volumePercent, 0, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
+						}
+						else {
+							spin.flash([255,255,0]);
+						}
 						kodi.player.playPause();
 					}
 					else {
