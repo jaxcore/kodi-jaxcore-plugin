@@ -26,15 +26,23 @@ KodiService.connectAll(function (kodi) {
 	
 	// Spin.connectAll(function(spin) {
 	// Spin.connectBLE(function(spin) {
-	Spin.connectBLE([
-		'b6fccf36ef6f419995b3b31c4eb972c6',
-		'ec0203503a7f474c879d5a4202c81b61'
-	], function(spin) {
+	// Spin.connectBLE([
+	// 	'b6fccf36ef6f419995b3b31c4eb972c6',
+	// 	'ec0203503a7f474c879d5a4202c81b61'
+	// ], function(spin) {
+	
+	var num = parseInt(process.argv[2]);
+	console.log('num', num);
+	if (!num) {
+		process.exit();
+	}
+	
+	Spin.connectBLE([], function(spin) {
 		// handle reconnect
 		
 		// spin.on('connect', function() {
 		
-		instances++;
+		
 		
 		var adapter = new KodiAdapter({
 			spin: spin,
@@ -43,6 +51,12 @@ KodiService.connectAll(function (kodi) {
 		
 		console.log('adapter spin connected', instances);
 		
+		instances++;
+		
+		if (instances === num) {
+			Spin.ble.stopScan();
+			console.log('stopped scanning');
+		}
 		
 		// });
 		

@@ -36,8 +36,7 @@ module.exports = function(adapter, devices) {
 							if (direction === 1) kodi.player.seekBigForward();
 							else kodi.player.seekBigBackward();
 							
-							// spin.rotate(direction, 0);
-							spin.rotate(direction, 0, [255,100,100], [255,200,200]);
+							spin.rotate(direction, [255,100,100], [255,200,200]);
 						}
 					}
 					else if (spin.state.buttonPushed) {
@@ -48,8 +47,7 @@ module.exports = function(adapter, devices) {
 							if (direction === 1) kodi.player.seekSmallForward();
 							else kodi.player.seekSmallBackward();
 							
-							// spin.rotate(direction, 1);
-							spin.rotate(direction, 0, [255,100,100], [0,0,0]);
+							spin.rotate(direction, [255,100,100], [0,0,0]);
 							
 						}
 					}
@@ -85,7 +83,7 @@ module.exports = function(adapter, devices) {
 							}
 						}
 						else {
-							if (spin.buffer(direction, 2, 1, 200)) {
+							if (spin.buffer(direction, 2, 2, 200)) {
 								kodi.navigate.down();
 							}
 						}
@@ -108,7 +106,7 @@ module.exports = function(adapter, devices) {
 							}
 						}
 						else {
-							if (spin.buffer(direction, 2, 1, 200)) {
+							if (spin.buffer(direction, 2, 2, 200)) {
 								kodi.navigate.up();
 							}
 						}
@@ -194,7 +192,7 @@ module.exports = function(adapter, devices) {
 					
 					if (kodi.state.playing) {
 						if (kodi.state.paused) {
-							spin.scale(kodi.state.volumePercent, 0, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
+							spin.scale(kodi.state.volumePercent, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
 						}
 						else {
 							spin.flash([255,255,0]);
@@ -211,16 +209,16 @@ module.exports = function(adapter, devices) {
 		kodi: {
 			volume: function(percent) {
 				console.log('volume', percent);
-				spin.scale(percent, 0, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
+				spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
 			},
 			navigate: function(type) {
 				switch (type) {
-					case 'up': spin.rotate(-1, 0, [255,0,0], [0, 0,255]); break;
-					case 'down': spin.rotate(1, 0, [255,0,0], [0, 0,255]); break;
-					case 'left': spin.rotate(-1, 0, [255,0,0], [0, 0,255]); break;
-					case 'right': spin.rotate(1, 0, [255,0,0], [0, 0,255]); break;
-					case 'pageUp': spin.rotate(-1, 0, [255,0,0], [0, 0,255]); break;
-					case 'pageDown': spin.rotate(1, 0, [255,0,0], [0, 0,255]); break;
+					case 'up': spin.rotate(-1, [255,0,0], [0, 0,255]); break;
+					case 'down': spin.rotate(1, [255,0,0], [0, 0,255]); break;
+					case 'left': spin.rotate(-1, [255,0,0], [0, 0,255]); break;
+					case 'right': spin.rotate(1, [255,0,0], [0, 0,255]); break;
+					case 'pageUp': spin.rotate(-1, [255,0,0], [0, 0,255]); break;
+					case 'pageDown': spin.rotate(1, [255,0,0], [0, 0,255]); break;
 					case 'select': spin.flash([0,255,0]); break;
 					// case 'back': spin.flash([255,0,255]); break;
 				}
@@ -231,7 +229,7 @@ module.exports = function(adapter, devices) {
 		receiver: {
 			volume: function(percent) {
 				console.log('receiver vol', percent);
-				spin.scale(percent, 0, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
+				spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
 			}
 		}
 	};
