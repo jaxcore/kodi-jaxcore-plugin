@@ -26,8 +26,9 @@ var KodiAdapter = require('./adapter2');
 
 var instances = 0;
 
-if (process.argv[2]==='2') {
+if (process.argv[2]) {
 	Spin.connectBLE([
+		'e1eaf0479a534366862ce22646d35605',
 		'b6fccf36ef6f419995b3b31c4eb972c6',
 		'ec0203503a7f474c879d5a4202c81b61'
 	], function (spin) {
@@ -35,7 +36,7 @@ if (process.argv[2]==='2') {
 		console.log('connected ble', instances);
 		
 		createAdapter(kodi, spin);
-	});
+	}, parseInt(process.argv[2]));
 }
 else {
 	Spin.connectBLE(function (spin) {
@@ -62,4 +63,11 @@ function createAdapter(kodi, spin) {
 		clearInterval(_interval);
 	});
 	
+}
+
+if (process.env.NODE_ENV==='prod') {
+	console.log = function () {
+	};
+	process.on('uncaughtException', function (err) {
+	});
 }

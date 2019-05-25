@@ -211,6 +211,15 @@ module.exports = function(adapter, devices) {
 				console.log('volume', percent);
 				spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
 			},
+			playing: function() {
+				console.log('playing');
+				spin.flash([0, 255, 0]);
+			},
+			paused: function(paused) {
+				console.log('paused', paused);
+				if (paused) spin.flash([255, 255, 0]);
+				else spin.flash([0, 255, 0]);
+			},
 			navigate: function(type) {
 				switch (type) {
 					case 'up': spin.rotate(-1, [255,0,0], [0, 0,255]); break;

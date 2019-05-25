@@ -376,7 +376,9 @@ KodiClient.prototype._setProperties = function (result) {
 					this.emit('stopped');
 				}
 			}
+			
 			if ('paused' in changes) {
+				
 				this.log('paused has changed', changes.paused);
 				this.emit('paused', changes.paused);
 			}
