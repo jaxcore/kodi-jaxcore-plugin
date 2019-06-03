@@ -42,7 +42,7 @@ else {
 	Spin.connectBLE(function (spin) {
 		instances++;
 		console.log('connected ble', instances);
-		
+		spin.setSleepTimer(0);
 		createAdapter(kodi, spin);
 	});
 }
