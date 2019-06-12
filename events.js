@@ -3,6 +3,8 @@ module.exports = function(adapter, devices) {
 	var kodi = devices.kodi;
 	var receiver = devices.receiver;
 	
+	spin.flash([0,255,0]);
+	
 	adapter.setState({
 		didSeek: false,
 		isSmallSeeking: false,
@@ -192,7 +194,7 @@ module.exports = function(adapter, devices) {
 					
 					if (kodi.state.playing) {
 						if (kodi.state.paused) {
-							spin.scale(kodi.state.volumePercent, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
+							spin.scale(kodi.state.volumePercent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
 						}
 						else {
 							spin.flash([255,255,0]);
@@ -209,7 +211,7 @@ module.exports = function(adapter, devices) {
 		kodi: {
 			volume: function(percent) {
 				console.log('volume', percent);
-				spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
+				spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
 			},
 			playing: function() {
 				console.log('playing');
@@ -238,7 +240,7 @@ module.exports = function(adapter, devices) {
 		receiver: {
 			volume: function(percent) {
 				console.log('receiver vol', percent);
-				spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 50]);
+				spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
 			}
 		}
 	};

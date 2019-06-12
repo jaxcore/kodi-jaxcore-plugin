@@ -26,7 +26,15 @@ var KodiAdapter = require('./adapter2');
 
 var instances = 0;
 
-if (process.argv[2]) {
+if (process.argv[2] === 'usb') {
+	Spin.connectUSB(function (spin) {
+		instances++;
+		console.log('connected usb', instances);
+		spin.setSleepTimer(0);
+		createAdapter(kodi, spin);
+	});
+}
+else if (process.argv[2]) {
 	Spin.connectBLE([
 		'e1eaf0479a534366862ce22646d35605',
 		'b6fccf36ef6f419995b3b31c4eb972c6',
