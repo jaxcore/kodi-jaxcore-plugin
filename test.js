@@ -47,10 +47,11 @@ else if (process.argv[2]) {
 	}, parseInt(process.argv[2]));
 }
 else {
-	Spin.connectBLE(function (spin) {
+	//Spin.connectBLE(function (spin) {
+	Spin.connect(function (spin) {
 		instances++;
 		console.log('connected ble', instances);
-		spin.setSleepTimer(0);
+		spin.setSleepTimer(120);
 		createAdapter(kodi, spin);
 	});
 }
