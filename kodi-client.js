@@ -1,9 +1,9 @@
-var EventEmitter = require('events');
+// var EventEmitter = require('events');
 var net = require("net");
 var plugin = require('jaxcore-plugin');
 var Client = plugin.Client;
-var kodiStore = plugin.createStore('Kodi Store');
-var kodiInterface = require('./interface.js');
+var kodiStore = plugin.createStore('Kodi Client Store');
+// var kodiInterface = require('./interface.js');
 
 // CLIENT -----------------------
 
@@ -11,10 +11,109 @@ var _instance = 0;
 function KodiClient(config) {
 	// var host = config.host;
 	// var port = (config.port || 9090);
-	config.id = KodiClient.id(config);
+	// config.id = KodiClient.id(config);
 	this.constructor();
+	
 	this.setStore(kodiStore);
-	this.bindInterface(kodiInterface, config);
+	
+	this.setStates({
+		id: {
+			type: 'string',
+			defaultValue: ''
+		},
+		host: {
+			type: 'string',
+			defaultValue: ''
+		},
+		port: {
+			type: 'integer',
+			defaultValue: 0
+		},
+		connected: {
+			type: 'boolean',
+			defaultValue: false
+		},
+		identity: {
+			type: 'string',
+			defaultValue: ''
+		},
+		muted: {
+			type: 'boolean',
+			defaultValue: false
+		},
+		volume: {
+			type: 'integer',
+			defaultValue: 0,
+			minimum: 'minVolume',
+			maximum: 'maxVolume'
+		},
+		volumePercent: {
+			type: 'float',
+			defaultValue: 0
+		},
+		minVolume: {
+			type: 'integer',
+			defaultValue: 0,
+			maximumValue: 100,
+			minimumValue: 0
+		},
+		maxVolume: {
+			type: 'integer',
+			defaultValue: 100,
+			maximumValue: 100,
+			minimumValue: 0
+		},
+		receivedVolume: {
+			type: 'integer',
+			defaultValue: 0
+		},
+		volumeIncrement: {
+			type: 'integer',
+			defaultValue: 1
+		},
+		playing: {
+			type: 'boolean',
+			defaultValue: false
+		},
+		playlistId: {
+			type: 'string'
+		},
+		paused: {
+			type: 'boolean',
+			defaultValue: false
+		},
+		speed: {
+			type: 'integer',
+			defaultValue: 1
+		},
+		position: {
+			type: 'integer',
+			defaultValue: 1
+		},
+		positionPercent: {
+			type: 'float',
+			defaultValue: 0
+		},
+		duration: {
+			type: 'integer',
+			defaultValue: 1
+		},
+		viewMode: {
+			type: 'string'
+		},
+		playerId: {
+			type: 'string'
+		},
+		mediaType: {
+			type: 'string'
+		},
+		mediaMode: {
+			type: 'string'
+		}
+	}, config);
+	
+	// this.setS(kodiStore);
+	// this.bindInterface(kodiInterface, config);
 	
 	this.log = plugin.createLogger('Kodi Client '+(_instance++));
 	this.log('create', config);
@@ -35,10 +134,10 @@ function KodiClient(config) {
 KodiClient.prototype = new Client();
 KodiClient.prototype.constructor = Client;
 
-KodiClient.id = function(config) {
-	// return Buffer.from(config.host+':'+config.port).toString('base64');
-	return config.host+':'+config.port;
-};
+// KodiClient.id = function(config) {
+// 	// return Buffer.from(config.host+':'+config.port).toString('base64');
+// 	return 'kodi:'+config.host+':'+config.port;
+// };
 
 KodiClient.prototype.update = function() {
 	this.getVolumeMuted();
@@ -126,7 +225,7 @@ KodiClient.prototype.connect = function() {
 	
 };
 KodiClient.prototype.onConnect = function() {
-	console.log('client onConnect');
+	this.log('client onConnect');
 	var me = this;
 	this.reconnecting = false;
 	this.reconnectCount = 0;
@@ -155,7 +254,7 @@ KodiClient.prototype.onConnect = function() {
 	
 	me.startMonitor();
 	
-	console.log('emit connect');
+	// console.log('emit connect');
 	me.emit('connect', me);  // emit after first data update?
 	
 	
@@ -799,5 +898,232 @@ KodiClient.prototype.write = function (str) {
 	// this.log('write r', r);
 };
 
+
+KodiClient.prototype.volumeUp = function () {
+	var v = this.state.volume + this.state.volumeIncrement;
+	this.log('volumeUp', v, this.state.volume, this.state.volumeIncrement)
+	this.volume(v);
+};
+KodiClient.prototype.volumeDown = function () {
+	var v = this.state.volume - this.state.volumeIncrement;
+	this.log('volumeDown', v, this.state.volume, this.state.volumeIncrement)
+	this.volume(v);
+};
+KodiClient.prototype.toggleMuted = function () {
+	var muted = !this.state.muted;
+	this.muted(muted);
+};
+KodiClient.prototype.mute = function () {
+	this.muted(true);
+};
+KodiClient.prototype.unmute = function () {
+	this.muted(false);
+};
+
+KodiClient.prototype.volume = function (v) {
+	console.log('auido.volume()', v);
+	
+	if (this.state.sentVolume === v) {
+		this.log('volume already', v);
+	}
+	else {
+		console.log('v', v);
+		
+		//log('volume()', v); //, this.state.audio);
+		
+		//if (int == this.lastWrittenVolume) return;
+		v = parseInt(v) || 0;
+		if (isNaN(v)) {
+			this.log('isNaN', v);
+			return;
+		} //int = 0;
+		
+		//let anthem = getState()[this.id];
+		
+		// if (new Date().getTime() - this.lastVolumeTime < 20) {
+		// 	log('skip vol');
+		// 	return;
+		// }
+		
+		if (v > this.state.maxVolume) {
+			this.log(v + ' exceeds maximum volume');
+			if (this.state.volume !== this.state.maxVolume) {
+				this.log('setting volume to maximum');
+				v = this.state.maxVolume;
+			}
+			else {
+				this.log('already at max');
+				return;
+			}
+		}
+		if (v < this.state.minVolume) {
+			this.log(v + ' below minimum volume');
+			if (this.state.volume !== this.state.minVolume) {
+				this.log('setting volume to minimum');
+				v = this.state.minVolume;
+			}
+			else {
+				this.log('already at min');
+				return;
+			}
+		}
+		
+		//this.lastWrittenVolume = int;
+		
+		var volumePercent = (v - this.state.minVolume) / Math.abs(this.state.maxVolume - this.state.minVolume);
+		var now = new Date().getTime();
+		this.setState({
+			volume: v,
+			volumePercent: volumePercent,
+			sentVolumeTime: now,
+			sentVolume: v
+		});
+		
+		// if (volume > 100) volume = 100;
+		// if (volume < 0) volume = 0;
+		
+		// this.log('setVolume', volume);
+		
+		this.lastVolumeTime = new Date().getTime();
+		// this._sentVolume = v;
+		
+		// var volumePercent = Math.abs(volume / 100);
+		
+		// this.setState({
+		// 	volume: volume,
+		// 	volumePercent: volumePercent
+		// });
+		
+		let d = {"method": "Application.SetVolume", "params": {"volume": v}};
+		console.log('d',d)
+		this.writeJson(d);
+		
+		// if (this._lastEmittedVolume !== v) {
+		// 	this._lastEmittedVolume = v;
+		// 	this.emit('volume', volumePercent, v);
+		// }
+		
+		
+		this.emit('volume', volumePercent, v);
+		
+		// this.write('Z1VOL' + v + ';');
+	}
+};
+
+KodiClient.prototype.minVolume = function (v) {
+	this.setState({
+		minVolume: v
+	});
+};
+KodiClient.prototype.maxVolume = function (v) {
+	this.setState({
+		maxVolume: v
+	});
+};
+KodiClient.prototype.muted = function (muted) {
+	this.writeJson({"method": "Application.SetMute", "params": {"mute": muted}});
+	
+	// if (muted) this.audioDevice.mute();
+	// else audioDevice.umute();
+};
+
+KodiClient.prototype.next = function () {
+	let playerid = this.getPlayerId();
+	if (playerid !== null) {
+		this.writeJson({"method": "Player.GoTo", "params": {"playerid": playerid, "to": "next"}});
+	}
+};
+KodiClient.prototype.previous = function () {
+	let playerid = this.getPlayerId();
+	if (playerid !== null) {
+		this.writeJson({"method": "Player.GoTo", "params": {"playerid": playerid, "to": "previous"}});
+	}
+};
+KodiClient.prototype.up = function () {
+	this.log('navigate', 'up');
+	this.emit('navigate', 'up');
+	this.writeJson({"method": "Input.Up"});
+};
+KodiClient.prototype.down = function () {
+	this.log('navigate', 'down');
+	this.emit('navigate', 'down');
+	this.writeJson({"method": "Input.Down"});
+};
+KodiClient.prototype.left = function () {
+	this.log('navigate', 'left');
+	this.emit('navigate', 'left');
+	this.writeJson({"method": "Input.Left"});
+};
+KodiClient.prototype.right = function () {
+	this.log('navigate', 'right');
+	this.emit('navigate', 'right');
+	this.writeJson({"method": "Input.Right"});
+};
+KodiClient.prototype.pageDown = function () {
+	this.log('navigate', 'pageDown');
+	this.emit('navigate', 'pageDown');
+	this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pagedown"}});
+};
+KodiClient.prototype.pageUp = function () {
+	this.log('navigate', 'pageUp');
+	this.emit('navigate', 'pageUp');
+	this.writeJson({"method": "Input.ExecuteAction", "params": {"action":"pageup"}});
+};
+KodiClient.prototype.select = function () {
+	this.log('navigate', 'select');
+	this.emit('navigate', 'select');
+	this.writeJson({"method": "Input.Select"});
+};
+KodiClient.prototype.back = function () {
+	this.log('navigate', 'back');
+	this.emit('navigate', 'back');
+	this.writeJson({"method": "Input.Back"});
+};
+
+KodiClient.prototype.playPause = function () {
+	let playerid = this.getPlayerId();
+	if (playerid !== null) {
+		this.writeJson({"method": "Player.PlayPause", "params": { "playerid": playerid }});
+	}
+};
+KodiClient.prototype.stop = function () {
+	let playerid = this.getPlayerId();
+	if (playerid !== null) {
+		this.writeJson({"method": "Player.Stop", "params": {"playerid": playerid}});
+	}
+};
+KodiClient.prototype.seekSmallForward = function () {
+	let playerid = this.getPlayerId();
+	if (playerid !== null) {
+		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "smallforward"}});
+	}
+};
+KodiClient.prototype.seekSmallBackward = function () {
+	let playerid = this.getPlayerId();
+	if (playerid !== null) {
+		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "smallbackward"}});
+	}
+};
+KodiClient.prototype.seekBigForward = function () {
+	let playerid = this.getPlayerId();
+	if (playerid !== null) {
+		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "bigforward"}});
+	}
+};
+KodiClient.prototype.seekBigBackward = function () {
+	let playerid = this.getPlayerId();
+	if (playerid !== null) {
+		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": "bigbackward"}});
+	}
+};
+
+KodiClient.prototype.seek = function (ms) {
+	let playerid = this.getPlayerId();
+	if (playerid !== null) {
+		let time = msToTime(ms);
+		this.log('seeking to', ms, time);
+		this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": {"time": time}}});
+	}
+};
 
 module.exports = KodiClient;

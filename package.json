@@ -1,13 +1,9 @@
 {
   "name": "jaxcore-kodi-plugin",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "",
-  "author": "Jaxcore",
-  "dependencies": {
-    "chalk": "^2.4.1",
-    "jaxcore-plugin": "0.0.2",
-    "jaxcore-spin": "0.0.1"
-  },
+  "author": "Dan Steinman",
+  "dependencies": {},
   "devDependencies": {},
   "scripts": {},
   "license": "MIT"
