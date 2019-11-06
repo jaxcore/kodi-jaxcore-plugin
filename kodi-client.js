@@ -179,10 +179,11 @@ KodiClient.prototype.onClose = function() {
 	// if (reconnecting && wasConnected) {
 	//	this.emit('reconnecting', this);
 	// }
-	if (!reconnecting && wasConnected) {
+	// if (!reconnecting && wasConnected) {
+	if (wasConnected) {
 		// only emit disconnect if not reconnecting
 		this.log('wasConnected emit disconnect');
-		this.emit('disconnect', this);
+		this.emit('disconnect', this, reconnecting);
 	}
 	else {
 		this.log('no emit disconnect', wasConnected);
