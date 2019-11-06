@@ -134,15 +134,17 @@ function KodiClient(config) {
 KodiClient.prototype = new Client();
 KodiClient.prototype.constructor = Client;
 
-// KodiClient.id = function(config) {
-// 	// return Buffer.from(config.host+':'+config.port).toString('base64');
-// 	return 'kodi:'+config.host+':'+config.port;
-// };
-
 KodiClient.prototype.update = function() {
 	this.getVolumeMuted();
 	this.getProperties();
 	this.getActivePlayers();
+};
+
+KodiClient.prototype.destroy = function(options) {
+	this.log('destroy...');
+	this.reconnect = 0;
+	this.disconnect();
+	// process.exit();
 };
 
 KodiClient.prototype.disconnect = function(options) {
@@ -171,11 +173,14 @@ KodiClient.prototype.onClose = function() {
 	this.setState({
 		connected: false,
 		status: 'disconnected',
-		reconnecting: reconnecting,
-		
+		reconnecting: reconnecting
 	});
 	
-	if (wasConnected) {
+	// if (reconnecting && wasConnected) {
+	//	this.emit('reconnecting', this);
+	// }
+	if (!reconnecting && wasConnected) {
+		// only emit disconnect if not reconnecting
 		this.log('wasConnected emit disconnect');
 		this.emit('disconnect', this);
 	}
@@ -186,18 +191,18 @@ KodiClient.prototype.onClose = function() {
 	if (reconnecting) {
 		this.log('reconnecting...', this.reconnectCount);
 		var me = this;
-		setTimeout(function() {
+		this.reconnectTimeout = setTimeout(function() {
 			if (me.reconnect>0) me.connect();
 		},this.reconnect);
 	}
 };
-KodiClient.prototype.setReconnect = function(ms) {
-	this.reconnect = ms;
-};
-KodiClient.prototype.stopReconnecting = function() {
-	this.reconnect = 0;
-	this.reconnecting = false;
-};
+// KodiClient.prototype.setReconnect = function(ms) {
+// 	this.reconnect = ms;
+// };
+// KodiClient.prototype.stopReconnecting = function() {
+// 	this.reconnect = 0;
+// 	this.reconnecting = false;
+// };
 KodiClient.prototype.onError = function(data) {
 	this.log('error', data.toString());
 	// destroy?
@@ -209,14 +214,8 @@ KodiClient.prototype.connect = function() {
 		connecting: true,
 		status: 'connecting'
 	});
-	
 	this.client = new net.Socket();
 	this.client.setNoDelay(true);
-	var me = this;
-	// this.client.setTimeout(10000, function () {
-	// 	me.log('timeout', me.state);
-	// 	me.client.destroy();
-	// });
 	this.client.on('error', this._onError);
 	this.client.on('data', this._onData);
 	this.client.on('close', this._onClose);
@@ -238,33 +237,14 @@ KodiClient.prototype.onConnect = function() {
 	});
 	this.log('connected', this.state.host);
 	
-	this.isFirstUpdate = true;
-	
-	this.once('volume', function() {
-		// if (me.isFirstUpdate) {
-		// 	me.isFirstUpdate = false;
-		// }
-		
-		console.log('got volume!');
-		
-	});
-	
+	//this.isFirstUpdate = true;
 	
 	this.update();
-	
 	me.startMonitor();
-	
-	// console.log('emit connect');
-	me.emit('connect', me);  // emit after first data update?
-	
-	
-	// this.emit('connect', this);  // emit after first data update?
-	// this.startMonitor();
+	me.emit('connect', me);
 };
 
-
 // INPUT COMMANDS
-
 
 KodiClient.prototype.getActivePlayers = function () {
 	this.queueMessage({"jsonrpc":"2.0","method":"Player.GetActivePlayers"},'_setActivePlayers');
@@ -608,7 +588,7 @@ KodiClient.prototype.isConnected = function() {
 
 KodiClient.prototype.writeJson = function (d) {
 	if (!this.isConnected()) {
-		this.log('write while connected',this.getState(), d);
+		this.log('write while not connected',this.getState(), d);
 		//process.exit();
 		return;
 	}
@@ -922,28 +902,17 @@ KodiClient.prototype.unmute = function () {
 
 KodiClient.prototype.volume = function (v) {
 	console.log('auido.volume()', v);
-	
 	if (this.state.sentVolume === v) {
 		this.log('volume already', v);
 	}
 	else {
 		console.log('v', v);
 		
-		//log('volume()', v); //, this.state.audio);
-		
-		//if (int == this.lastWrittenVolume) return;
 		v = parseInt(v) || 0;
 		if (isNaN(v)) {
 			this.log('isNaN', v);
 			return;
-		} //int = 0;
-		
-		//let anthem = getState()[this.id];
-		
-		// if (new Date().getTime() - this.lastVolumeTime < 20) {
-		// 	log('skip vol');
-		// 	return;
-		// }
+		}
 		
 		if (v > this.state.maxVolume) {
 			this.log(v + ' exceeds maximum volume');
@@ -968,8 +937,6 @@ KodiClient.prototype.volume = function (v) {
 			}
 		}
 		
-		//this.lastWrittenVolume = int;
-		
 		var volumePercent = (v - this.state.minVolume) / Math.abs(this.state.maxVolume - this.state.minVolume);
 		var now = new Date().getTime();
 		this.setState({
@@ -979,34 +946,10 @@ KodiClient.prototype.volume = function (v) {
 			sentVolume: v
 		});
 		
-		// if (volume > 100) volume = 100;
-		// if (volume < 0) volume = 0;
-		
-		// this.log('setVolume', volume);
-		
 		this.lastVolumeTime = new Date().getTime();
-		// this._sentVolume = v;
-		
-		// var volumePercent = Math.abs(volume / 100);
-		
-		// this.setState({
-		// 	volume: volume,
-		// 	volumePercent: volumePercent
-		// });
-		
 		let d = {"method": "Application.SetVolume", "params": {"volume": v}};
-		console.log('d',d)
 		this.writeJson(d);
-		
-		// if (this._lastEmittedVolume !== v) {
-		// 	this._lastEmittedVolume = v;
-		// 	this.emit('volume', volumePercent, v);
-		// }
-		
-		
 		this.emit('volume', volumePercent, v);
-		
-		// this.write('Z1VOL' + v + ';');
 	}
 };
 
@@ -1022,9 +965,6 @@ KodiClient.prototype.maxVolume = function (v) {
 };
 KodiClient.prototype.muted = function (muted) {
 	this.writeJson({"method": "Application.SetMute", "params": {"mute": muted}});
-	
-	// if (muted) this.audioDevice.mute();
-	// else audioDevice.umute();
 };
 
 KodiClient.prototype.next = function () {

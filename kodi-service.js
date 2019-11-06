@@ -1,9 +1,5 @@
-// var EventEmitter = require('events');
-// var net = require("net");
 var plugin = require('jaxcore-plugin');
 var Client = plugin.Client;
-// var log = plugin.createLogger('Kodi Service');
-
 var KodiClient = require('./kodi-client');
 
 var kodiServiceInstance;
@@ -29,14 +25,14 @@ KodiService.getOrCreateInstance = function(serviceId, serviceConfig) {
 	}
 	
 	if (kodiServiceInstance.clients[serviceId]) {
-		var instance = kodiServiceInstance.clients[serviceId];
+		let instance = kodiServiceInstance.clients[serviceId];
 		console.log('RETURNING KODI CLIENT', instance);
 		process.exit();
 		return instance;
 	}
 	else {
 		console.log('CREATE KODI', serviceId, serviceConfig);
-		var instance =  kodiServiceInstance.create(serviceConfig);
+		var instance = kodiServiceInstance.create(serviceConfig);
 		console.log('CREATED KODI CLIENT', instance);
 		
 		return instance;
@@ -45,24 +41,12 @@ KodiService.getOrCreateInstance = function(serviceId, serviceConfig) {
 };
 
 KodiService.destroyInstance = function(serviceId, serviceConfig) {
-	if (keyboardInstance) {
-		keyboardInstance.destroy();
+	if (kodiServiceInstance) {
+		kodiServiceInstance.destroy();
 	}
 };
 
 KodiService.prototype.create = function (config) {
-	// KodiService.connectAll(function (kodi) {
-	// 	console.log('connected Kodi', kodi.state);
-	//
-	// 	var instances = 0;
-	//
-	// 	// Spin.connectAll(function(spin) {
-	// });
-	
-	return this.add(config);
-};
-
-KodiService.prototype.add = function (config) {
 	var id = KodiService.id(config);
 	config.id = id;
 	
@@ -85,10 +69,6 @@ KodiService.prototype.add = function (config) {
 	
 	return this.clients[id];
 };
-KodiService.prototype.remove = function (id) {
-	if (this.devices[id]) this.devices[id].destroy();
-	delete this.devices[id]
-};
 
 KodiService.prototype.connect = function (id, callback) {
 	if (callback) {
@@ -107,16 +87,6 @@ KodiService.prototype.connectAll = function(callback) {
 		this.connect(id, callback);
 	}
 };
-
-
-// var kodi = KodiService.create({
-// 	host: host,
-// 	port: 9090
-// });
-// kodi.on('connect', function() {
-// 	console.log('kodi connected', kodi.state);
-// });
-// kodi.connect();
 
 KodiService.startService = function() {
 	if (!kodiServiceInstance) {
