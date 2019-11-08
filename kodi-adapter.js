@@ -1,26 +1,28 @@
-function getDefaultState() {
-	return {
-		didSeek: false,
-		isSmallSeeking: false,
-		isBigSeeking: false,
-		skipNext: false,
-		skippedNext: false,
-		didNavLeftRight: false
-	};
-}
+const Adapter = require('jaxcore-plugin').Adapter;
 
-function kodiAdapter() {
-	const {spin} = this.devices;
-	const {kodi} = this.services;
-	const {theme} = this;
-	spin.rotateRainbow(2);
-	spin.lightsOff();
+class KodiAdapter extends Adapter {
+	static getDefaultState() {
+		return {
+			didSeek: false,
+			isSmallSeeking: false,
+			isBigSeeking: false,
+			skipNext: false,
+			skippedNext: false,
+			didNavLeftRight: false
+		};
+	}
 	
-	this.setEvents({
-		spin: {
+	constructor(config, theme, devices, services) {
+		super(config, theme, devices, services);
+		const {spin} = devices;
+		const {kodi} = services;
+		spin.rotateRainbow(2);
+		spin.lightsOff();
+		
+		this.addEvents(spin, {
 			spin: function (diff, time) {
 				this.log('spin', diff, time);
-				let direction = diff>0? 1:-1;
+				let direction = diff > 0 ? 1 : -1;
 				
 				if (this.state.skipNext) {
 					this.setState({
@@ -31,89 +33,78 @@ function kodiAdapter() {
 				
 				if (kodi.state.playing) {
 					if (kodi.state.paused) {
-						spin.flash([255,255,0]);
-					}
-					else if (spin.state.knobPushed) {
+						spin.flash([255, 255, 0]);
+					} else if (spin.state.knobPushed) {
 						// if (spin.buffer(direction, 2, 2)) {
-							this.setState({
-								isBigSeeking: true
-							});
-							if (direction === 1) kodi.seekBigForward();
-							else kodi.seekBigBackward();
-							
-							spin.rotate(direction, [255,100,100], [255,200,200]);
+						this.setState({
+							isBigSeeking: true
+						});
+						if (direction === 1) kodi.seekBigForward();
+						else kodi.seekBigBackward();
+						
+						spin.rotate(direction, [255, 100, 100], [255, 200, 200]);
 						// }
-					}
-					else if (spin.state.buttonPushed) {
+					} else if (spin.state.buttonPushed) {
 						// if (spin.buffer(direction, 2, 2)) {
-							this.setState({
-								isSmallSeeking: true
-							});
-							if (direction === 1) kodi.seekSmallForward();
-							else kodi.seekSmallBackward();
-							
-							spin.rotate(direction, [255,100,100], [0,0,0]);
+						this.setState({
+							isSmallSeeking: true
+						});
+						if (direction === 1) kodi.seekSmallForward();
+						else kodi.seekSmallBackward();
+						
+						spin.rotate(direction, [255, 100, 100], [0, 0, 0]);
 						// }
-					}
-					else {
+					} else {
 						// kodi.changeVolume(diff)
 						if (direction === 1) kodi.volumeUp();
 						else kodi.volumeDown();
 					}
-				}
-				else {
+				} else {
 					if (direction === 1) {
 						if (spin.state.knobPushed) {
 							// if (spin.buffer(direction, 1, 1)) {
-								kodi.pageDown();
-								this.setState({
-									isPaging: true
-								});
+							kodi.pageDown();
+							this.setState({
+								isPaging: true
+							});
 							// }
-						}
-						else if (spin.state.buttonPushed) {
+						} else if (spin.state.buttonPushed) {
 							// if (spin.buffer(direction, 3, 5)) {
-								kodi.right();
-								this.setState({
-									didNavLeftRight: true
-								});
+							kodi.right();
+							this.setState({
+								didNavLeftRight: true
+							});
 							// }
-						}
-						else {
+						} else {
 							// if (spin.buffer(direction, 2, 2, 200)) {
-								kodi.down();
+							kodi.down();
 							// }
 						}
-					}
-					else {
+					} else {
 						if (spin.state.knobPushed) {
 							// if (spin.buffer(direction, 1, 1)) {
-								kodi.pageUp();
-								this.setState({
-									isPaging: true
-								});
+							kodi.pageUp();
+							this.setState({
+								isPaging: true
+							});
 							// }
-						}
-						else if (spin.state.buttonPushed) {
+						} else if (spin.state.buttonPushed) {
 							// if (spin.buffer(direction, 3, 5)) {
-								kodi.left();
-								this.setState({
-									didNavLeftRight: true
-								});
+							kodi.left();
+							this.setState({
+								didNavLeftRight: true
+							});
 							// }
-						}
-						else {
+						} else {
 							// if (spin.buffer(direction, 2, 2, 200)) {
-								kodi.up();
+							kodi.up();
 							// }
 						}
 					}
 				}
-				
 			},
-			
 			button: function (pushed) {
-				console.log('adapter'+this.instance, 'button', pushed);
+				console.log('adapter' + this.instance, 'button', pushed);
 				if (pushed) {
 					this.setState({
 						skipNext: true
@@ -147,13 +138,11 @@ function kodiAdapter() {
 					}
 					if (kodi.state.playing) {
 						kodi.stop();
-					}
-					else {
+					} else {
 						kodi.back();
 					}
 				}
 			},
-			
 			buttonHold: function () {
 				if (this.state.skipNext) {
 					this.setState({
@@ -163,10 +152,8 @@ function kodiAdapter() {
 					console.log('button-hold skipNext');
 					
 					kodi.next();
-				}
-				else console.log('btton-hold no skip');
+				} else console.log('btton-hold no skip');
 			},
-			
 			knob: function (pushed) {
 				console.log('knob', pushed);
 				if (!pushed) {
@@ -189,34 +176,32 @@ function kodiAdapter() {
 					if (kodi.state.playing) {
 						if (kodi.state.paused) {
 							spin.scale(kodi.state.volumePercent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
-						}
-						else {
-							spin.flash([255,255,0]);
+						} else {
+							spin.flash([255, 255, 0]);
 						}
 						kodi.playPause();
-					}
-					else {
+					} else {
 						kodi.select();
 					}
 				}
 			}
-		},
+		});
 		
-		kodi: {
-			volume: function(percent) {
+		this.addEvents(kodi, {
+			volume: function (percent) {
 				console.log('volume', percent);
 				spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
 			},
-			playing: function() {
+			playing: function () {
 				console.log('playing');
 				spin.flash([0, 255, 0]);
 			},
-			paused: function(paused) {
+			paused: function (paused) {
 				console.log('paused', paused);
 				if (paused) spin.flash([255, 255, 0]);
 				else spin.flash([0, 255, 0]);
 			},
-			navigate: function(type) {
+			navigate: function (type) {
 				this.log('navigate', type);
 				// switch (type) {
 				// 	case 'up': spin.rotate(-1, [255,0,0], [0, 0,255]); break;
@@ -229,28 +214,22 @@ function kodiAdapter() {
 				// 	// case 'back': spin.flash([255,0,255]); break;
 				// }
 			}
-		}
+		});
+			
+			// receiver: {
+			// 	volume: function(percent) {
+			// 		console.log('receiver vol', percent);
+			// 		spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
+			// 	}
+			// }
 		
-		// receiver: {
-		// 	volume: function(percent) {
-		// 		console.log('receiver vol', percent);
-		// 		spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
-		// 	}
-		// }
-	});
+	}
+
+	static getServicesConfig(adapterConfig) {
+		return {
+			kodi: adapterConfig.settings.services.kodi
+		};
+	}
 }
 
-
-kodiAdapter.getServicesConfig = function(adapterConfig) {
-	console.log('kodiAdapter adapterConfig.settings.services.kodi', adapterConfig.settings.services.kodi);
-	
-	let servicesConfig = {
-		kodi: adapterConfig.settings.services.kodi
-	};
-	
-	return servicesConfig;
-};
-
-kodiAdapter.getDefaultState = getDefaultState;
-
-module.exports = kodiAdapter;
+module.exports = KodiAdapter;

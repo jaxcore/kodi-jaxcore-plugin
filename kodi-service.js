@@ -12,40 +12,6 @@ function KodiService() {
 KodiService.prototype = new Client();
 KodiService.prototype.constructor = Client;
 
-KodiService.id = function(serviceConfig) {
-	let id = 'kodi:'+serviceConfig.host+':'+serviceConfig.port;
-	console.log('KodiService.id', serviceConfig, 'id', id);
-	return id;
-};
-
-KodiService.getOrCreateInstance = function(serviceId, serviceConfig) {
-	console.log('KodiService getOrCreateInstance', serviceId, serviceConfig);
-	if (!kodiServiceInstance) {
-		KodiService.startService();
-	}
-	
-	if (kodiServiceInstance.clients[serviceId]) {
-		let instance = kodiServiceInstance.clients[serviceId];
-		console.log('RETURNING KODI CLIENT', instance);
-		process.exit();
-		return instance;
-	}
-	else {
-		console.log('CREATE KODI', serviceId, serviceConfig);
-		var instance = kodiServiceInstance.create(serviceConfig);
-		console.log('CREATED KODI CLIENT', instance);
-		
-		return instance;
-		// keyboardInstance = new KodiService(serviceConfig);
-	}
-};
-
-KodiService.destroyInstance = function(serviceId, serviceConfig) {
-	if (kodiServiceInstance) {
-		kodiServiceInstance.destroy();
-	}
-};
-
 KodiService.prototype.create = function (config) {
 	var id = KodiService.id(config);
 	config.id = id;
@@ -85,6 +51,42 @@ KodiService.prototype.connectAll = function(callback) {
 	for (var id in this.clients) {
 		log('connectAll', id);
 		this.connect(id, callback);
+	}
+};
+
+
+
+KodiService.id = function(serviceConfig) {
+	let id = 'kodi:'+serviceConfig.host+':'+serviceConfig.port;
+	console.log('KodiService.id', serviceConfig, 'id', id);
+	return id;
+};
+
+KodiService.getOrCreateInstance = function(serviceId, serviceConfig, callback) {
+	console.log('KodiService getOrCreateInstance', serviceId, serviceConfig);
+	if (!kodiServiceInstance) {
+		KodiService.startService();
+	}
+	
+	if (kodiServiceInstance.clients[serviceId]) {
+		let instance = kodiServiceInstance.clients[serviceId];
+		console.log('RETURNING KODI CLIENT', instance);
+		process.exit();
+		callback(null, instance);
+	}
+	else {
+		console.log('CREATE KODI', serviceId, serviceConfig);
+		var instance = kodiServiceInstance.create(serviceConfig);
+		console.log('CREATED KODI CLIENT', instance);
+		
+		callback(null, instance);
+		// keyboardInstance = new KodiService(serviceConfig);
+	}
+};
+
+KodiService.destroyInstance = function(serviceId, serviceConfig) {
+	if (kodiServiceInstance) {
+		kodiServiceInstance.destroy();
 	}
 };
 
