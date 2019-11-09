@@ -72,7 +72,7 @@ KodiService.getOrCreateInstance = function(serviceId, serviceConfig, callback) {
 		let instance = kodiServiceInstance.clients[serviceId];
 		console.log('RETURNING KODI CLIENT', instance);
 		process.exit();
-		callback(null, instance);
+		return instance;
 	}
 	else {
 		console.log('CREATE KODI', serviceId, serviceConfig);

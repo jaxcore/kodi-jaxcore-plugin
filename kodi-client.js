@@ -497,8 +497,14 @@ KodiClient.prototype._setVolumeMuted = function (result) {
 	this.log('_setVolumeMuted', result);
 	
 	if ('muted' in result) {
+		let muted = result.muted;
+		console.log('mute result', muted);
+		if (muted) {
+			console.log('MUTED');;
+			process.exit();
+		}
 		this.setState({
-			muted: result.muted
+			muted
 		});
 	}
 	
@@ -561,7 +567,12 @@ KodiClient.prototype._processVolume = function (volume) {
 };
 
 KodiClient.prototype._processMuted = function (muted) {
-	this.setState('muted', muted);
+	if (muted) {
+		console.log('MUTED?', muted);
+		process.exit();
+	}
+	
+	this.setState({muted: muted});
 	this.emit('muted', muted);
 };
 
@@ -741,7 +752,12 @@ KodiClient.prototype.processData = function (data, raw) {
 			this.log('OnVolumeChanged', data.params.data);
 			let volume = Math.round(data.params.data.volume);
 			let muted = data.params.data.muted;
-			this.log('receive volume', volume, 'muted', volume);
+			if (muted) {
+				console.log('MUTED X');
+				process.exit();
+			}
+			this.log('receive volume', volume, 'muted', muted);
+			
 			this._processVolume(volume);
 			this._processMuted(muted);
 		}

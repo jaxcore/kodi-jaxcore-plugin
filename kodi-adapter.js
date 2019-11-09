@@ -34,7 +34,8 @@ class KodiAdapter extends Adapter {
 				if (kodi.state.playing) {
 					if (kodi.state.paused) {
 						spin.flash([255, 255, 0]);
-					} else if (spin.state.knobPushed) {
+					}
+					else if (spin.state.knobPushed) {
 						// if (spin.buffer(direction, 2, 2)) {
 						this.setState({
 							isBigSeeking: true
@@ -44,7 +45,8 @@ class KodiAdapter extends Adapter {
 						
 						spin.rotate(direction, [255, 100, 100], [255, 200, 200]);
 						// }
-					} else if (spin.state.buttonPushed) {
+					}
+					else if (spin.state.buttonPushed) {
 						// if (spin.buffer(direction, 2, 2)) {
 						this.setState({
 							isSmallSeeking: true
@@ -54,12 +56,14 @@ class KodiAdapter extends Adapter {
 						
 						spin.rotate(direction, [255, 100, 100], [0, 0, 0]);
 						// }
-					} else {
+					}
+					else {
 						// kodi.changeVolume(diff)
 						if (direction === 1) kodi.volumeUp();
 						else kodi.volumeDown();
 					}
-				} else {
+				}
+				else {
 					if (direction === 1) {
 						if (spin.state.knobPushed) {
 							// if (spin.buffer(direction, 1, 1)) {
@@ -68,19 +72,22 @@ class KodiAdapter extends Adapter {
 								isPaging: true
 							});
 							// }
-						} else if (spin.state.buttonPushed) {
+						}
+						else if (spin.state.buttonPushed) {
 							// if (spin.buffer(direction, 3, 5)) {
 							kodi.right();
 							this.setState({
 								didNavLeftRight: true
 							});
 							// }
-						} else {
+						}
+						else {
 							// if (spin.buffer(direction, 2, 2, 200)) {
 							kodi.down();
 							// }
 						}
-					} else {
+					}
+					else {
 						if (spin.state.knobPushed) {
 							// if (spin.buffer(direction, 1, 1)) {
 							kodi.pageUp();
@@ -88,14 +95,16 @@ class KodiAdapter extends Adapter {
 								isPaging: true
 							});
 							// }
-						} else if (spin.state.buttonPushed) {
+						}
+						else if (spin.state.buttonPushed) {
 							// if (spin.buffer(direction, 3, 5)) {
 							kodi.left();
 							this.setState({
 								didNavLeftRight: true
 							});
 							// }
-						} else {
+						}
+						else {
 							// if (spin.buffer(direction, 2, 2, 200)) {
 							kodi.up();
 							// }
@@ -138,7 +147,8 @@ class KodiAdapter extends Adapter {
 					}
 					if (kodi.state.playing) {
 						kodi.stop();
-					} else {
+					}
+					else {
 						kodi.back();
 					}
 				}
@@ -152,7 +162,8 @@ class KodiAdapter extends Adapter {
 					console.log('button-hold skipNext');
 					
 					kodi.next();
-				} else console.log('btton-hold no skip');
+				}
+				else console.log('btton-hold no skip');
 			},
 			knob: function (pushed) {
 				console.log('knob', pushed);
@@ -176,11 +187,13 @@ class KodiAdapter extends Adapter {
 					if (kodi.state.playing) {
 						if (kodi.state.paused) {
 							spin.scale(kodi.state.volumePercent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
-						} else {
+						}
+						else {
 							spin.flash([255, 255, 0]);
 						}
 						kodi.playPause();
-					} else {
+					}
+					else {
 						kodi.select();
 					}
 				}
@@ -189,17 +202,25 @@ class KodiAdapter extends Adapter {
 		
 		this.addEvents(kodi, {
 			volume: function (percent) {
-				console.log('volume', percent);
-				spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
+				if (kodi.state.muted) {
+					console.log('muted volume', percent);
+					spin.scale(kodi.state.volumePercent, theme.tertiary, theme.tertiary, theme.middle);
+				}
+				else {
+					console.log('volume', percent);
+					spin.scale(kodi.state.volumePercent, theme.low, theme.high, theme.middle);
+				}
 			},
 			playing: function () {
 				console.log('playing');
-				spin.flash([0, 255, 0]);
+				// spin.flash([0, 255, 0]);
+				spin.flash(theme.success);
+				
 			},
 			paused: function (paused) {
 				console.log('paused', paused);
-				if (paused) spin.flash([255, 255, 0]);
-				else spin.flash([0, 255, 0]);
+				if (paused) spin.flash(theme.secondary);
+				else spin.flash(theme.success);
 			},
 			navigate: function (type) {
 				this.log('navigate', type);
@@ -215,16 +236,16 @@ class KodiAdapter extends Adapter {
 				// }
 			}
 		});
-			
-			// receiver: {
-			// 	volume: function(percent) {
-			// 		console.log('receiver vol', percent);
-			// 		spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
-			// 	}
-			// }
+		
+		// receiver: {
+		// 	volume: function(percent) {
+		// 		console.log('receiver vol', percent);
+		// 		spin.scale(percent, [0, 0, 255], [255, 0, 0], [255, 255, 255]);
+		// 	}
+		// }
 		
 	}
-
+	
 	static getServicesConfig(adapterConfig) {
 		return {
 			kodi: adapterConfig.settings.services.kodi
