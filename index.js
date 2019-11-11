@@ -1,10 +1,8 @@
-var KodiService = require('./kodi-service');
-var kodiAdapter = require('./kodi-adapter');
 module.exports = {
 	services: {
-		kodi: KodiService
+		kodi: require('./kodi-service')
 	},
 	adapters: {
-		kodi: kodiAdapter
+		kodi: require('./kodi-adapter')
 	}
 }
