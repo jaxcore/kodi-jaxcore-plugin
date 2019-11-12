@@ -1,6 +1,8 @@
 const {Service, createLogger} = require('jaxcore-plugin');
 var KodiClient = require('./kodi-client');
 
+const log = createLogger('Kodi');
+
 var kodiServiceInstance;
 
 class KodiService extends Service {
@@ -11,7 +13,7 @@ class KodiService extends Service {
 		this.clients = {};
 	};
 	
-	create(config) {
+	create(config, serviceStore) {
 		var id = KodiService.id(config);
 		config.id = id;
 		
@@ -22,7 +24,8 @@ class KodiService extends Service {
 		
 		this.log('connect', id);
 		
-		this.clients[id] = new KodiClient(config);
+		
+		this.clients[id] = new KodiClient(config, serviceStore);
 		
 		this.clients[id].on('connect', () => {
 			this.emit('connect', this.clients[id]);  // TODO: emit connect-client?
@@ -60,26 +63,26 @@ class KodiService extends Service {
 	
 	static id(serviceConfig) {
 		let id = 'kodi:'+serviceConfig.host+':'+serviceConfig.port;
-		console.log('KodiService.id', serviceConfig, 'id', id);
+		log('KodiService.id', serviceConfig, 'id', id);
 		return id;
 	}
 	
-	static getOrCreateInstance(serviceId, serviceConfig, callback) {
-		console.log('KodiService getOrCreateInstance', serviceId, serviceConfig);
+	static getOrCreateInstance(serviceStore, serviceId, serviceConfig, callback) {
+		log('KodiService getOrCreateInstance', serviceId, serviceConfig);
 		if (!kodiServiceInstance) {
 			KodiService.startService();
 		}
 		
 		if (kodiServiceInstance.clients[serviceId]) {
 			let instance = kodiServiceInstance.clients[serviceId];
-			console.log('RETURNING KODI CLIENT', instance);
+			log('RETURNING KODI CLIENT', instance);
 			process.exit();
 			return instance;
 		}
 		else {
-			console.log('CREATE KODI', serviceId, serviceConfig);
-			var instance = kodiServiceInstance.create(serviceConfig);
-			console.log('CREATED KODI CLIENT', instance);
+			log('CREATE KODI', serviceId, serviceConfig);
+			var instance = kodiServiceInstance.create(serviceConfig, serviceStore);
+			log('CREATED KODI CLIENT', instance);
 			callback(null, instance);
 		}
 	}

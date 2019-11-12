@@ -1,6 +1,6 @@
 const net = require("net");
-const {Client, createLogger, createStore} = require('jaxcore-plugin');
-const kodiStore = createStore('Kodi Client Store');
+const {Client, createLogger} = require('jaxcore-plugin');
+// const kodiStore = createStore('Kodi Client Store');
 
 function timeDiff(time) {
 	if (typeof time === 'undefined') {
@@ -20,114 +20,111 @@ function mkid() {
 	return parseInt(Math.random().toString().substring(2));
 }
 
+const schema = {
+	id: {
+		type: 'string',
+		defaultValue: ''
+	},
+	host: {
+		type: 'string',
+		defaultValue: ''
+	},
+	port: {
+		type: 'integer',
+		defaultValue: 0
+	},
+	connected: {
+		type: 'boolean',
+		defaultValue: false
+	},
+	identity: {
+		type: 'string',
+		defaultValue: ''
+	},
+	muted: {
+		type: 'boolean',
+		defaultValue: false
+	},
+	volume: {
+		type: 'integer',
+		defaultValue: 0,
+		minimum: 'minVolume',
+		maximum: 'maxVolume'
+	},
+	volumePercent: {
+		type: 'float',
+		defaultValue: 0
+	},
+	minVolume: {
+		type: 'integer',
+		defaultValue: 0,
+		maximumValue: 100,
+		minimumValue: 0
+	},
+	maxVolume: {
+		type: 'integer',
+		defaultValue: 100,
+		maximumValue: 100,
+		minimumValue: 0
+	},
+	receivedVolume: {
+		type: 'integer',
+		defaultValue: 0
+	},
+	volumeIncrement: {
+		type: 'integer',
+		defaultValue: 1
+	},
+	playing: {
+		type: 'boolean',
+		defaultValue: false
+	},
+	playlistId: {
+		type: 'string'
+	},
+	paused: {
+		type: 'boolean',
+		defaultValue: false
+	},
+	speed: {
+		type: 'integer',
+		defaultValue: 1
+	},
+	position: {
+		type: 'integer',
+		defaultValue: 1
+	},
+	positionPercent: {
+		type: 'float',
+		defaultValue: 0
+	},
+	duration: {
+		type: 'integer',
+		defaultValue: 1
+	},
+	viewMode: {
+		type: 'string'
+	},
+	playerId: {
+		type: 'string'
+	},
+	mediaType: {
+		type: 'string'
+	},
+	mediaMode: {
+		type: 'string'
+	}
+};
+
 var _instance = 0;
 class KodiClient extends Client {
-	constructor(defaults) {
-		super();
+	constructor(defaults, store) {
+		super(schema, store, defaults);
+		
 		this.log = createLogger('Kodi Client ' + (_instance++));
 		this.log('create', defaults);
-		this.setStore(kodiStore);
-		this.setStates({
-			id: {
-				type: 'string',
-				defaultValue: ''
-			},
-			host: {
-				type: 'string',
-				defaultValue: ''
-			},
-			port: {
-				type: 'integer',
-				defaultValue: 0
-			},
-			connected: {
-				type: 'boolean',
-				defaultValue: false
-			},
-			identity: {
-				type: 'string',
-				defaultValue: ''
-			},
-			muted: {
-				type: 'boolean',
-				defaultValue: false
-			},
-			volume: {
-				type: 'integer',
-				defaultValue: 0,
-				minimum: 'minVolume',
-				maximum: 'maxVolume'
-			},
-			volumePercent: {
-				type: 'float',
-				defaultValue: 0
-			},
-			minVolume: {
-				type: 'integer',
-				defaultValue: 0,
-				maximumValue: 100,
-				minimumValue: 0
-			},
-			maxVolume: {
-				type: 'integer',
-				defaultValue: 100,
-				maximumValue: 100,
-				minimumValue: 0
-			},
-			receivedVolume: {
-				type: 'integer',
-				defaultValue: 0
-			},
-			volumeIncrement: {
-				type: 'integer',
-				defaultValue: 1
-			},
-			playing: {
-				type: 'boolean',
-				defaultValue: false
-			},
-			playlistId: {
-				type: 'string'
-			},
-			paused: {
-				type: 'boolean',
-				defaultValue: false
-			},
-			speed: {
-				type: 'integer',
-				defaultValue: 1
-			},
-			position: {
-				type: 'integer',
-				defaultValue: 1
-			},
-			positionPercent: {
-				type: 'float',
-				defaultValue: 0
-			},
-			duration: {
-				type: 'integer',
-				defaultValue: 1
-			},
-			viewMode: {
-				type: 'string'
-			},
-			playerId: {
-				type: 'string'
-			},
-			mediaType: {
-				type: 'string'
-			},
-			mediaMode: {
-				type: 'string'
-			}
-		}, defaults);
 		
-		// this.setS(kodiStore);
-		// this.bindInterface(kodiInterface, config);
-		
-		
-		this.id = this.state.id;
+		// this.id = this.state.id;
 		
 		this.mq = {};
 		this.lastVolumeTime = 0;
