@@ -38,6 +38,9 @@ class KodiService extends Service {
 	}
 	
 	connect(id, callback) {
+		console.log('IS THIS CALLED?');
+		process.exit();
+		
 		if (callback) {
 			this.clients[id].on('connect', callback);
 		}

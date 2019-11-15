@@ -1,11 +1,11 @@
 module.exports = {
 	services: {
-		kodi: require('./kodi-service'),
-	},
-	stores: {
-		kodi: 'client'
+		kodi: {
+			service: require('./kodi-service'),
+			storeType: 'client'
+		}
 	},
 	adapters: {
 		kodi: require('./kodi-adapter')
 	}
-}
+};

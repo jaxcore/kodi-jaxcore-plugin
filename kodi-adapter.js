@@ -1,4 +1,4 @@
-const Adapter = require('jaxcore-plugin').Adapter;
+const {Adapter} = require('jaxcore-plugin');
 
 class KodiAdapter extends Adapter {
 	static getDefaultState() {
@@ -16,7 +16,7 @@ class KodiAdapter extends Adapter {
 		super(store, config, theme, devices, services);
 		const {spin} = devices;
 		const {kodi} = services;
-		spin.rotateRainbow(2);
+		spin.rainbow(2);
 		spin.lightsOff();
 		
 		this.addEvents(spin, {
