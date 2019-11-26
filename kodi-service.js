@@ -1,4 +1,4 @@
-const {Service, createLogger} = require('jaxcore-plugin');
+const {Service, createLogger} = require('jaxcore');
 var KodiClient = require('./kodi-client');
 
 const log = createLogger('Kodi');
@@ -31,7 +31,7 @@ class KodiService extends Service {
 			this.emit('connect', this.clients[id]);  // TODO: emit connect-client?
 		});
 		this.clients[id].once('disconnect', () => {
-			me.emit('disconnect', this.clients[id]);
+			this.emit('disconnect', this.clients[id]);
 		});
 		
 		return this.clients[id];

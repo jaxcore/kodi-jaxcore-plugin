@@ -1,4 +1,4 @@
-const {Adapter} = require('jaxcore-plugin');
+const {Adapter} = require('jaxcore');
 
 class KodiAdapter extends Adapter {
 	static getDefaultState() {
@@ -16,6 +16,11 @@ class KodiAdapter extends Adapter {
 		super(store, config, theme, devices, services);
 		const {spin} = devices;
 		const {kodi} = services;
+		
+		if (!kodi) {
+			console.log('no kodi', kodi);
+			process.exit();
+		}
 		spin.rainbow(2);
 		spin.lightsOff();
 		
@@ -58,9 +63,9 @@ class KodiAdapter extends Adapter {
 						// }
 					}
 					else {
-						// kodi.changeVolume(diff)
-						if (direction === 1) kodi.volumeUp();
-						else kodi.volumeDown();
+						kodi.changeVolume(diff);
+						// if (direction === 1) kodi.volumeUp();
+						// else kodi.volumeDown();
 					}
 				}
 				else {

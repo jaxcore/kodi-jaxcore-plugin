@@ -1,5 +1,5 @@
 const net = require("net");
-const {Client, createLogger} = require('jaxcore-plugin');
+const {Client, createLogger} = require('jaxcore');
 // const kodiStore = createStore('Kodi Client Store');
 
 function timeDiff(time) {
@@ -869,15 +869,21 @@ class KodiClient extends Client {
 		// this.log('write r', r);
 	}
 	
+	changeVolume(diff) {
+		var v = this.state.volume + diff * this.state.volumeIncrement;
+		this.log('changeVolume', v);
+		this.volume(v);
+	}
+	
 	volumeUp() {
 		var v = this.state.volume + this.state.volumeIncrement;
-		this.log('volumeUp', v, this.state.volume, this.state.volumeIncrement)
+		this.log('volumeUp', v, this.state.volume, this.state.volumeIncrement);
 		this.volume(v);
 	}
 	
 	volumeDown() {
 		var v = this.state.volume - this.state.volumeIncrement;
-		this.log('volumeDown', v, this.state.volume, this.state.volumeIncrement)
+		this.log('volumeDown', v, this.state.volume, this.state.volumeIncrement);
 		this.volume(v);
 	}
 	
