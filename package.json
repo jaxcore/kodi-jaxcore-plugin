@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "",
   "author": "Dan Steinman",
-  "dependencies": {},
+  "dependencies": {
+    "jaxcore": "git+https://github.com/jaxcore/jaxcore#master"
+  },
   "devDependencies": {},
   "scripts": {},
   "license": "MIT"
