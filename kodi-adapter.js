@@ -253,7 +253,7 @@ class KodiAdapter extends Adapter {
 	
 	static getServicesConfig(adapterConfig) {
 		return {
-			kodi: adapterConfig.settings.services.kodi
+			kodi: adapterConfig.profile.services.kodi
 		};
 	}
 }
