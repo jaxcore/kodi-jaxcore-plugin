@@ -8,7 +8,8 @@ class KodiAdapter extends Adapter {
 			isBigSeeking: false,
 			skipNext: false,
 			skippedNext: false,
-			didNavLeftRight: false
+			didNavLeftRight: false,
+			knobPushPosition: 0
 		};
 	}
 	
@@ -28,6 +29,7 @@ class KodiAdapter extends Adapter {
 			spin: function (diff, time) {
 				this.log('spin', diff, time);
 				let direction = diff > 0 ? 1 : -1;
+				let adiff = Math.abs(diff);
 				
 				if (this.state.skipNext) {
 					this.setState({
@@ -71,48 +73,107 @@ class KodiAdapter extends Adapter {
 				else {
 					if (direction === 1) {
 						if (spin.state.knobPushed) {
-							// if (spin.buffer(direction, 1, 1)) {
-							kodi.pageDown();
-							this.setState({
-								isPaging: true
-							});
+							this.shuttlePage();
+							
+							// let wasPaging = this.state.isPaging;
+							// clearInterval(this.pagingInterval);
+							// this.setState({
+							// 	isPaging: true
+							// });
+							// let shuttleDiff = this.state.knobPushPosition - spin.state.spinPosition;
+							// let ashuttleDiff = Math.min(Math.abs(shuttleDiff), 8);
+							// let balanceDir = shuttleDiff>0? -1: 1;
+							// if (ashuttleDiff > 0) {
+							// 	let startInterval = 150;
+							// 	if (ashuttleDiff === 1) startInterval = 250;
+							// 	let intervalAmount = startInterval + 250*(1 - ashuttleDiff/8);
+							// 	console.log('shuttleDiff', shuttleDiff, intervalAmount);
+							// 	const go = () => {
+							// 		if (balanceDir === 1) kodi.pageDown();
+							// 		else kodi.pageUp();
+							// 	};
+							// 	if (!wasPaging) {
+							// 		go()
+							// 	}
+							// 	this.pagingInterval = setInterval(go, intervalAmount);
 							// }
+							// spin.balance(balanceDir*(ashuttleDiff/8)/3, theme.low, theme.high, theme.white);
+							
 						}
 						else if (spin.state.buttonPushed) {
 							// if (spin.buffer(direction, 3, 5)) {
-							kodi.right();
+							kodi.right(spin.buffer(diff, 4, 2, 100));
 							this.setState({
 								didNavLeftRight: true
 							});
 							// }
 						}
 						else {
-							// if (spin.buffer(direction, 2, 2, 200)) {
-							kodi.down();
-							// }
+							// kodi.down(spin.buffer(diff, 2, 2, 200));
+							let kbuff = 1;
+							let sbuff = 1;
+							if (time > 200) {
+								kbuff = 3;
+								sbuff = 2;
+							}
+							else if (time > 100) kbuff = 2;
+							// else if (time > 65) kbuff = 1;
+							kodi.down(spin.buffer(diff, kbuff, sbuff, 200));
 						}
 					}
 					else {
 						if (spin.state.knobPushed) {
+							this.shuttlePage();
+							
+							// let wasPaging = this.state.isPaging;
+							// clearInterval(this.pagingInterval);
+							// this.setState({
+							// 	isPaging: true
+							// });
+							// let shuttleDiff = this.state.knobPushPosition - spin.state.spinPosition;
+							// let ashuttleDiff = Math.min(Math.abs(shuttleDiff), 8);
+							// let balanceDir = shuttleDiff>0? -1: 1;
+							// if (ashuttleDiff > 0) {
+							// 	let startInterval = 150;
+							// 	if (ashuttleDiff === 1) startInterval = 250;
+							// 	let intervalAmount = startInterval + 250*(1 - ashuttleDiff/8);
+							// 	console.log('shuttleDiff', shuttleDiff, intervalAmount);
+							// 	this.pagingInterval = setInterval(() => {
+							// 		if (balanceDir === 1) kodi.pageDown();
+							// 		else kodi.pageUp();
+							// 	}, intervalAmount);
+							//
+							// 	if (!wasPaging) {
+							// 		if (balanceDir === 1) kodi.pageDown();
+							// 		else kodi.pageUp();
+							// 	}
+							// }
+							// spin.balance(balanceDir*(ashuttleDiff/8)/3, theme.low, theme.high, theme.white);
+							
 							// if (spin.buffer(direction, 1, 1)) {
-							kodi.pageUp();
-							this.setState({
-								isPaging: true
-							});
+							// kodi.pageUp();
+							// this.setState({
+							// 	isPaging: true
+							// });
 							// }
 						}
 						else if (spin.state.buttonPushed) {
 							// if (spin.buffer(direction, 3, 5)) {
-							kodi.left();
+							kodi.left(spin.buffer(diff, 4, 2, 100));
 							this.setState({
 								didNavLeftRight: true
 							});
 							// }
 						}
 						else {
-							// if (spin.buffer(direction, 2, 2, 200)) {
-							kodi.up();
-							// }
+							let kbuff = 1;
+							let sbuff = 1;
+							if (time > 200) {
+								kbuff = 3;
+								sbuff = 2;
+							}
+							else if (time > 100) kbuff = 2;
+							kodi.up(spin.buffer(diff, kbuff, sbuff, 200));
 						}
 					}
 				}
@@ -172,7 +233,12 @@ class KodiAdapter extends Adapter {
 			},
 			knob: function (pushed) {
 				console.log('knob', pushed);
-				if (!pushed) {
+				if (pushed) {
+					this.setState({
+						knobPushPosition: spin.state.spinPosition
+					});
+				}
+				else {
 					if (this.state.isSmallSeeking || this.state.isBigSeeking) {
 						this.setState({
 							isSmallSeeking: false,
@@ -181,11 +247,13 @@ class KodiAdapter extends Adapter {
 						console.log('seeking cancelled');
 						return;
 					}
+					
 					if (this.state.isPaging) {
+						clearInterval(this.pagingInterval);
 						this.setState({
 							isPaging: false
 						});
-						console.log('isPaging cancelled');
+						// console.log('isPaging cancelled');
 						return;
 					}
 					
@@ -227,18 +295,18 @@ class KodiAdapter extends Adapter {
 				if (paused) spin.flash(theme.secondary);
 				else spin.flash(theme.success);
 			},
-			navigate: function (type) {
-				this.log('navigate', type);
-				// switch (type) {
-				// 	case 'up': spin.rotate(-1, [255,0,0], [0, 0,255]); break;
-				// 	case 'down': spin.rotate(1, [255,0,0], [0, 0,255]); break;
-				// 	case 'left': spin.rotate(-1, [255,0,0], [0, 0,255]); break;
-				// 	case 'right': spin.rotate(1, [255,0,0], [0, 0,255]); break;
-				// 	case 'pageUp': spin.rotate(-1, [255,0,0], [0, 0,255]); break;
-				// 	case 'pageDown': spin.rotate(1, [255,0,0], [0, 0,255]); break;
-				// 	case 'select': spin.flash([0,255,0]); break;
-				// 	// case 'back': spin.flash([255,0,255]); break;
-				// }
+			navigate: function (type, diff) {
+				this.log('navigate', type, diff);
+				switch (type) {
+					case 'up': spin.rotate(diff, [255,0,0], [0, 0,255]); break;
+					case 'down': spin.rotate(diff, [255,0,0], [0, 0,255]); break;
+					case 'left': spin.rotate(diff, [255,0,0], [0, 0,255]); break;
+					case 'right': spin.rotate(diff, [255,0,0], [0, 0,255]); break;
+					case 'pageUp': spin.rotate(diff, [255,0,0], [0, 0,255]); break;
+					case 'pageDown': spin.rotate(diff, [255,0,0], [0, 0,255]); break;
+					case 'select': spin.flash([0,255,0]); break;
+					case 'back': spin.flash([255,0,255]); break;
+				}
 			}
 		});
 		
@@ -249,6 +317,44 @@ class KodiAdapter extends Adapter {
 		// 	}
 		// }
 		
+	}
+	
+	shuttlePage() {
+		const kodi = this.services.kodi;
+		const spin = this.devices.spin;
+		const theme = this.theme;
+		let wasPaging = this.state.isPaging;
+		clearInterval(this.pagingInterval);
+		this.setState({
+			isPaging: true
+		});
+		let shuttleDiff = this.state.knobPushPosition - spin.state.spinPosition;
+		let ashuttleDiff = Math.min(Math.abs(shuttleDiff), 8);
+		let balanceDir = shuttleDiff>0? -1: 1;
+		let directionChanged = this.state.pagingDirection !== balanceDir;
+		if (ashuttleDiff > 0) {
+			let startInterval = 20;
+			// if (!wasPaging)
+			if (ashuttleDiff === 1) startInterval = 200;
+			if (ashuttleDiff === 2) startInterval = 100;
+			if (ashuttleDiff === 3) startInterval = 50;
+			let intervalAmount = startInterval + 400*(1 - ashuttleDiff/8);
+			console.log('shuttleDiff', shuttleDiff, intervalAmount);
+			const go = () => {
+				this.setState({
+					pagingDirection: balanceDir
+				});
+				if (balanceDir === 1) kodi.pageDown();
+				else kodi.pageUp();
+				spin.balance(balanceDir*(ashuttleDiff/8)/3, theme.low, theme.high, theme.white);
+			};
+			if (!wasPaging || directionChanged) {
+				go();
+			}
+			this.pagingInterval = setInterval(go, intervalAmount);
+			spin.balance(balanceDir*(ashuttleDiff/8)/3, theme.low, theme.high, theme.white);
+		}
+		else spin.balance(0, theme.low, theme.high, theme.white);
 	}
 	
 	static getServicesConfig(adapterConfig) {

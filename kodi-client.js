@@ -431,7 +431,7 @@ class KodiClient extends Client {
 				// this.log('_setProperties nope 1');
 			}
 			
-			console.log('status', {
+			this.log('status', {
 				playing: playing,
 				paused: paused,
 				position: position
@@ -510,9 +510,9 @@ class KodiClient extends Client {
 		
 		if ('muted' in result) {
 			let muted = result.muted;
-			console.log('mute result', muted);
+			this.log('mute result', muted);
 			if (muted) {
-				console.log('MUTED');
+				this.log('MUTED');
 				;
 				process.exit();
 			}
@@ -557,7 +557,7 @@ class KodiClient extends Client {
 		// 	volumePercent: volumePercent
 		// });
 		
-		// console.log(this.state);
+		// this.log(this.state);
 		// process.exit();
 		
 		if (this._lastEmittedVolume !== volume) {
@@ -569,7 +569,7 @@ class KodiClient extends Client {
 	
 	_processMuted(muted) {
 		if (muted) {
-			console.log('MUTED?', muted);
+			this.log('MUTED?', muted);
 			process.exit();
 		}
 		
@@ -738,7 +738,7 @@ class KodiClient extends Client {
 				let volume = Math.round(data.params.data.volume);
 				let muted = data.params.data.muted;
 				if (muted) {
-					console.log('MUTED X');
+					this.log('MUTED X');
 					process.exit();
 				}
 				this.log('receive volume', volume, 'muted', muted);
@@ -901,12 +901,12 @@ class KodiClient extends Client {
 	}
 	
 	volume(v) {
-		console.log('auido.volume()', v);
+		this.log('auido.volume()', v);
 		if (this.state.sentVolume === v) {
 			this.log('volume already', v);
 		}
 		else {
-			console.log('v', v);
+			this.log('v', v);
 			
 			v = parseInt(v) || 0;
 			if (isNaN(v)) {
@@ -983,28 +983,51 @@ class KodiClient extends Client {
 		}
 	}
 	
-	up() {
-		this.log('navigate', 'up');
-		this.emit('navigate', 'up');
-		this.writeJson({"method": "Input.Up"});
+	up(diff) {
+		let d = diff;
+		while (diff < 0) {
+			this.log('navigate', 'up');
+			this.writeJson({"method": "Input.Up"});
+			diff++;
+		}
+		if (d < 0) this.emit('navigate', 'up', d);
 	}
 	
-	down() {
-		this.log('navigate', 'down');
-		this.emit('navigate', 'down');
-		this.writeJson({"method": "Input.Down"});
+	down(diff) {
+		let d = diff;
+		while (diff > 0) {
+			this.log('navigate', 'down');
+			this.writeJson({"method": "Input.Down"});
+			diff--;
+		}
+		if (d > 0) this.emit('navigate', 'down', d);
 	}
 	
-	left() {
-		this.log('navigate', 'left');
-		this.emit('navigate', 'left');
-		this.writeJson({"method": "Input.Left"});
+	left(diff) {
+		let d = diff;
+		while (diff < 0) {
+			this.log('navigate', 'left');
+			this.writeJson({"method": "Input.Left"});
+			diff++;
+		}
+		if (d < 0) this.emit('navigate', 'left', d);
+		
+		// this.log('navigate', 'left');
+		// this.emit('navigate', 'left');
+		// this.writeJson({"method": "Input.Left"});
 	}
 	
-	right() {
-		this.log('navigate', 'right');
-		this.emit('navigate', 'right');
-		this.writeJson({"method": "Input.Right"});
+	right(diff) {
+		// this.log('navigate', 'right');
+		// this.emit('navigate', 'right');
+		// this.writeJson({"method": "Input.Right"});
+		let d = diff;
+		while (diff > 0) {
+			this.log('navigate', 'right');
+			this.writeJson({"method": "Input.Right"});
+			diff--;
+		}
+		if (d > 0) this.emit('navigate', 'right', d);
 	}
 	
 	pageDown() {
