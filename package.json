@@ -1,9 +1,11 @@
 {
   "name": "jaxcore-kodi-plugin",
   "version": "0.0.1",
-  "description": "",
+  "description": "Voice control plugin for Kodi",
   "author": "Dan Steinman",
-  "dependencies": {},
+  "dependencies": {
+    "jaxcore": "0.0.1"
+  },
   "devDependencies": {},
   "scripts": {},
   "license": "MIT"
