@@ -195,9 +195,8 @@ class KodiClient extends Client {
 		
 		if (reconnecting) {
 			this.log('reconnecting...', this.reconnectCount);
-			var me = this;
-			this.reconnectTimeout = setTimeout(function () {
-				if (me.reconnect > 0) me.connect();
+			this.reconnectTimeout = setTimeout(() => {
+				if (this.reconnect > 0) this.connect();
 			}, this.reconnect);
 		}
 	}
@@ -232,7 +231,6 @@ class KodiClient extends Client {
 	
 	onConnect() {
 		this.log('client onConnect');
-		var me = this;
 		this.reconnecting = false;
 		this.reconnectCount = 0;
 		this.setState({
@@ -247,8 +245,8 @@ class KodiClient extends Client {
 		//this.isFirstUpdate = true;
 		
 		this.update();
-		me.startMonitor();
-		me.emit('connect', me);
+		this.startMonitor();
+		this.emit('connect', this);
 	}
 	
 	// INPUT COMMANDS
