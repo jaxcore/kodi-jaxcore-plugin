@@ -116,6 +116,8 @@ const schema = {
 	}
 };
 
+const kodiInstances = {};
+
 var _instance = 0;
 class KodiClient extends Client {
 	constructor(defaults, store) {
@@ -128,7 +130,8 @@ class KodiClient extends Client {
 		
 		this.mq = {};
 		this.lastVolumeTime = 0;
-		this.reconnect = 2000;
+		this.reconnectable = true;
+		this.reconnectTimeout = 2000;
 		this.reconnectCount = 0;
 		
 		this._onError = this.onError.bind(this);
@@ -141,13 +144,6 @@ class KodiClient extends Client {
 		this.getVolumeMuted();
 		this.getProperties();
 		this.getActivePlayers();
-	}
-	
-	destroy(options) {
-		this.log('destroy...');
-		this.reconnect = 0;
-		this.disconnect();
-		// process.exit();
 	}
 	
 	disconnect(options) {
@@ -171,7 +167,8 @@ class KodiClient extends Client {
 		this.stopMonitor();
 		
 		var wasConnected = this.isConnected();
-		var reconnecting = this.reconnect > 0;
+		var reconnecting = this.reconnectable; // > 0;
+		
 		this.reconnectCount++;
 		
 		this.setState({
@@ -195,9 +192,10 @@ class KodiClient extends Client {
 		
 		if (reconnecting) {
 			this.log('reconnecting...', this.reconnectCount);
-			this.reconnectTimeout = setTimeout(() => {
-				if (this.reconnect > 0) this.connect();
-			}, this.reconnect);
+			setTimeout(() => {
+				// if (this.reconnect > 0) this.connect();
+				if (this.reconnectable) this.connect();
+			}, this.reconnectTimeout);
 		}
 	}
 	
@@ -1100,6 +1098,31 @@ class KodiClient extends Client {
 			let time = msToTime(ms);
 			this.log('seeking to', ms, time);
 			this.writeJson({"method": "Player.Seek", "params": {"playerid": playerid, "value": {"time": time}}});
+		}
+	}
+	
+	destroy() {
+		this.log('destroy...');
+		this.reconnectable = false;
+		this.disconnect();
+		delete kodiInstances[this.id];
+	}
+	
+	static id(serviceConfig) {
+		let id = 'kodi:'+serviceConfig.host+':'+serviceConfig.port;
+		// console.log('KodiService.id', serviceConfig, 'id', id);
+		return id;
+	}
+	
+	static getOrCreateInstance(serviceStore, serviceId, serviceConfig, callback) {
+		// console.log('KodiService getOrCreateInstance', serviceId, serviceConfig);
+		if (kodiInstances[serviceId]) {
+			callback(null, kodiInstances[serviceId], false);
+		}
+		else {
+			serviceConfig.id = serviceId;
+			kodiInstances[serviceId] = new KodiClient(serviceConfig, serviceStore);
+			callback(null, kodiInstances[serviceId], true);
 		}
 	}
 }

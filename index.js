@@ -1,7 +1,7 @@
 module.exports = {
 	services: {
 		kodi: {
-			service: require('./kodi-service'),
+			service: require('./kodi-client'),
 			storeType: 'client'
 		}
 	},
