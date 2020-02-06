@@ -110,14 +110,22 @@ class KodiAdapter extends Adapter {
 						}
 						else {
 							// kodi.down(spin.buffer(diff, 2, 2, 200));
-							let kbuff = 2;
+							
+							// let kbuff = 2;
+							// let sbuff = 2;
+							// if (Math.abs(diff) > 8) {
+							// 	kbuff = 0;
+							// }
+							// else if (Math.abs(diff) > 2) {
+							// 	kbuff = 1;
+							// }
+							
+							let kbuff = 1;
 							let sbuff = 2;
-							if (Math.abs(diff) > 8) {
+							if (Math.abs(diff) > 5) {
 								kbuff = 0;
 							}
-							else if (Math.abs(diff) > 2) {
-								kbuff = 1;
-							}
+							
 							// if (time > 200) {
 							// 	kbuff = 3;
 							// 	sbuff = 2;
@@ -190,7 +198,7 @@ class KodiAdapter extends Adapter {
 							// else if (time > 100) kbuff = 2;
 							// kodi.up(spin.buffer(diff, kbuff, sbuff, 200));
 							
-							kodi.up(spin.buffer(diff, kbuff, sbuff, 400));
+							kodi.up(spin.buffer(diff, kbuff, sbuff, 200));
 							
 						}
 					}
