@@ -4,7 +4,7 @@
   "description": "Voice control plugin for Kodi",
   "author": "Dan Steinman",
   "dependencies": {
-    "jaxcore": "0.0.1"
+    
   },
   "devDependencies": {},
   "scripts": {},

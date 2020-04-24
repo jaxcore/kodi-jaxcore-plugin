@@ -194,7 +194,8 @@ class KodiClient extends Client {
 			this.log('reconnecting...', this.reconnectCount);
 			setTimeout(() => {
 				// if (this.reconnect > 0) this.connect();
-				if (this.reconnectable) this.connect();
+				//if (this.reconnectable)
+				this._connect();
 			}, this.reconnectTimeout);
 		}
 	}
@@ -213,6 +214,13 @@ class KodiClient extends Client {
 	}
 	
 	connect() {
+		this.setState({
+			reconnectable: true
+		});
+		this._connect();
+	}
+	// todo: test
+	_connect() {
 		this.log('connecting', this.state.host + ':' + this.state.port);
 		this.setState({
 			connecting: true,
